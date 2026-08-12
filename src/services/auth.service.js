@@ -3,6 +3,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { redisClient } = require("../config/redis");
+const { RESET_PASSWORD_TEMPLATE } = require("../utils/emailTempletes");
+const { sendEmail } = require("./email.service");
 
 const SALT_ROUNDS = 12;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -50,7 +52,7 @@ const loginUser = async (email, password) => {
   }
 
   // verify password
-  const isValid = await bcrypt.compare(password, password_hash);
+  const isValid = await bcrypt.compare(password, user.password_hash);
   if (!isValid) {
     throw new Error("Invalid password");
   }
@@ -133,17 +135,32 @@ const logoutUser = async (userId) => {
 
 // FORGOT PASSWORD
 const forgotPassword = async (email) => {
-  const user = await knex.raw(`SELECT id FROM users WHERE email = ?`, [email]);
+  const result = await knex.raw(
+    `SELECT id,email,first_name FROM users WHERE email = ?`,
+    [email],
+  );
 
-  if (user.rows.length === 0) {
+  if (result.rows.length === 0) {
     return { message: "If the email exists, a reset link will be sent" };
   }
 
   const resetToken = crypto.randomBytes(32).toString("hex");
   await redisClient.set(`reset:${email}`, resetToken, "EX", 900); //15 minutes
 
-  // TODO: send email with reset token
-  console.log(`Reset token for ${email}: ${resetToken}`);
+  const user = result.rows[0];
+  const html = RESET_PASSWORD_TEMPLATE.replace(
+    "{USER_NAME}",
+    user.first_name,
+  ).replaceAll(
+    "{RESET_LINK}",
+    `${process.env.CLIENT_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`,
+  );
+
+  try {
+    sendEmail(user.email, "Reset Your Password - FitAddis", html);
+  } catch (error) {
+    throw new Error("Failed to send reset email. Please try again later.");
+  }
 
   return { message: "Password reset link sent to your email" };
 };
