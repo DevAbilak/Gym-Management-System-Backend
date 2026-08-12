@@ -9,9 +9,9 @@
  */
 exports.up = async function (knex) {
   // ---------- DROP REFRESH TOKENS TABLE ----------
-  await knex.raw(`DROP TABLE IF EXISTS refresh_tokens CASCADE;`);
+  await knex.raw('DROP TABLE IF EXISTS refresh_tokens CASCADE;');
   console.log(
-    "Dropped refresh_tokens table. Now using Redis for refresh tokens.",
+    'Dropped refresh_tokens table. Now using Redis for refresh tokens.',
   );
 };
 
@@ -29,5 +29,5 @@ exports.down = async function (knex) {
     CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
     CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
   `);
-  console.log("Re-created refresh_tokens table (rollback).");
+  console.log('Re-created refresh_tokens table (rollback).');
 };

@@ -1,6 +1,6 @@
 exports.up = async function (knex) {
   // Enable UUID generation extension
-  await knex.raw(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
+  await knex.raw('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
 
   // =================================================
   // A. USERS & AUTHENTICATION

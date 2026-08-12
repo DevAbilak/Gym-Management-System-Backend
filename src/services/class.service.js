@@ -1,4 +1,4 @@
-const knex = require("../db/db");
+const knex = require('../db/db');
 
 const createClass = async (payload) => {
   const {
@@ -43,28 +43,28 @@ const listClasses = async (filters = {}) => {
 
   // date filter
   if (date) {
-    conditions.push("DATE(c.start_time) = ?");
+    conditions.push('DATE(c.start_time) = ?');
     params.push(date);
   }
 
   // discipline filter
   if (discipline) {
-    conditions.push("c.category = ?");
+    conditions.push('c.category = ?');
     params.push(discipline);
   }
 
   // trainer filter
   if (trainer_id) {
-    conditions.push("c.trainer_id = ?");
+    conditions.push('c.trainer_id = ?');
     params.push(trainer_id);
   }
 
   // only show upcoming/scheduled classes
-  conditions.push("c.status = 'scheduled'");
-  conditions.push("c.start_time > NOW()");
+  conditions.push('c.status = \'scheduled\'');
+  conditions.push('c.start_time > NOW()');
 
   const whereClause =
-    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const offset = (page - 1) * limit;
 
   const query = `
@@ -116,20 +116,20 @@ const getClassById = async (id) => {
 
 const updateClass = async (id, updates) => {
   const allowedFields = [
-    "name",
-    "description",
-    "category",
-    "difficulty",
-    "capacity",
-    "start_time",
-    "end_time",
-    "location",
-    "status",
+    'name',
+    'description',
+    'category',
+    'difficulty',
+    'capacity',
+    'start_time',
+    'end_time',
+    'location',
+    'status',
   ];
   const setClauses = [];
   const Values = [];
 
-  allowedFields.forEach((fields) => {
+  allowedFields.forEach((field) => {
     if (updates[field] !== undefined) {
       setClauses.push(`${field} = ?`);
       Values.push(updates[field]);
@@ -137,13 +137,13 @@ const updateClass = async (id, updates) => {
   });
 
   if (setClauses.length === 0) {
-    throw new Error("No valid fields to update");
+    throw new Error('No valid fields to update');
   }
   Values.push(id);
 
   const query = `
     UPDATE classes 
-    SET ${setClauses.join(", ")}, updated_at = NOW()
+    SET ${setClauses.join(', ')}, updated_at = NOW()
     WHERE id = ?
     RETURNING *
   `;

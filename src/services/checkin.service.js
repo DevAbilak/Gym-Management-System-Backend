@@ -1,5 +1,5 @@
-const knex = require("../db/db");
-const { redisClient } = require("../config/redis");
+const knex = require('../db/db');
+const { redisClient } = require('../config/redis');
 
 const CACHE_TTL = 300; // 5 minutes
 
@@ -41,7 +41,7 @@ const getMemberByUniqueId = async (uniqueId) => {
     await redisClient.set(
       `member:${uniqueId}`,
       JSON.stringify(member),
-      "EX",
+      'EX',
       CACHE_TTL,
     );
   }
@@ -52,11 +52,11 @@ const getMemberByUniqueId = async (uniqueId) => {
 const checkIn = async (uniqueId, verifiedBy = null) => {
   const member = getMemberByUniqueId(uniqueId);
   if (!member) {
-    throw new Error("Member not found");
+    throw new Error('Member not found');
   }
 
   if (!member.is_active) {
-    throw new Error("Account is deactivated");
+    throw new Error('Account is deactivated');
   }
 
   // record check-in
@@ -80,14 +80,14 @@ const checkIn = async (uniqueId, verifiedBy = null) => {
       email: member.email,
     },
     checkin: result.rows[0],
-    status: "success",
+    status: 'success',
   };
 };
 
 const overRideCheckIn = async (uniqueId, reason, verified_by) => {
   const member = getMemberByUniqueId(uniqueId);
   if (!member) {
-    throw new Error("Member not found");
+    throw new Error('Member not found');
   }
 
   const result = await knex.raw(
@@ -157,4 +157,5 @@ module.exports = {
   checkIn,
   getCheckInHistory,
   getTodayCheckIns,
+  overRideCheckIn,
 };

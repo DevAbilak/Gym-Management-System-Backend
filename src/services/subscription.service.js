@@ -1,10 +1,10 @@
-const knex = require("../db/db");
+const knex = require('../db/db');
 
 const createSubscription = async (payload) => {
   const { member_profile_id, membership_tier_id, start_date, auto_renew } =
     payload;
 
-  const start = start_date || new Date().toISOString().split("T")[0];
+  const start = start_date || new Date().toISOString().split('T')[0];
 
   const result = await knex.raw(
     `
@@ -20,10 +20,10 @@ const createSubscription = async (payload) => {
 };
 
 const updateSubscriptionStatus = async (subscriptionId, newStatus) => {
-  const validStatus = ["active", "expired", "frozen", "cancelled"];
+  const validStatus = ['active', 'expired', 'frozen', 'cancelled'];
 
   if (!validStatus.includes(newStatus)) {
-    throw new Error("Invalid subscription status");
+    throw new Error('Invalid subscription status');
   }
 
   let query = `
@@ -35,7 +35,7 @@ const updateSubscriptionStatus = async (subscriptionId, newStatus) => {
 
   let params = [newStatus, subscriptionId];
 
-  if (newStatus == "frozen") {
+  if (newStatus == 'frozen') {
     query = `
       UPDATE subscriptions 
       SET status = ?, frozen_until = CURRENT_DATE + INTERVAL '30days', updated_at = NOW()
@@ -49,7 +49,7 @@ const updateSubscriptionStatus = async (subscriptionId, newStatus) => {
 };
 
 const getSubscriptionById = async (id) => {
-  const result = await knex.raw(`SELECT * FROM subscriptions WHERE id = ?`, [
+  const result = await knex.raw('SELECT * FROM subscriptions WHERE id = ?', [
     id,
   ]);
   return result.rows[0];

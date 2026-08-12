@@ -1,22 +1,22 @@
 exports.up = async function (knex) {
   // ---------- DROP TABLES ----------
-  await knex.raw(`DROP TABLE IF EXISTS rating_highlights CASCADE;`);
-  console.log("Dropped rating_highlights");
+  await knex.raw('DROP TABLE IF EXISTS rating_highlights CASCADE;');
+  console.log('Dropped rating_highlights');
 
-  await knex.raw(`DROP TABLE IF EXISTS payment_webhooks CASCADE;`);
-  console.log("Dropped payment_webhooks");
+  await knex.raw('DROP TABLE IF EXISTS payment_webhooks CASCADE;');
+  console.log('Dropped payment_webhooks');
 
-  await knex.raw(`DROP TABLE IF EXISTS email_logs CASCADE;`);
-  console.log("Dropped email_logs");
+  await knex.raw('DROP TABLE IF EXISTS email_logs CASCADE;');
+  console.log('Dropped email_logs');
 
-  await knex.raw(`DROP TABLE IF EXISTS system_settings CASCADE;`);
-  console.log("Dropped system_settings");
+  await knex.raw('DROP TABLE IF EXISTS system_settings CASCADE;');
+  console.log('Dropped system_settings');
 
-  await knex.raw(`DROP TABLE IF EXISTS audit_logs CASCADE;`);
-  console.log("Dropped audit_logs");
+  await knex.raw('DROP TABLE IF EXISTS audit_logs CASCADE;');
+  console.log('Dropped audit_logs');
 
-  await knex.raw(`DROP TABLE IF EXISTS notifications CASCADE;`);
-  console.log("Dropped notifications");
+  await knex.raw('DROP TABLE IF EXISTS notifications CASCADE;');
+  console.log('Dropped notifications');
 };
 
 // ---------- ROLLBACK (Re-create dropped tables) ----------
@@ -37,7 +37,7 @@ exports.down = async function (knex) {
     );
     CREATE INDEX IF NOT EXISTS idx_rating_highlights_trainer ON rating_highlights(trainer_id);
   `);
-  console.log("Re-created rating_highlights (rollback).");
+  console.log('Re-created rating_highlights (rollback).');
 
   // 2. Re-create payment_webhooks
   await knex.raw(`
@@ -52,7 +52,7 @@ exports.down = async function (knex) {
     );
     CREATE INDEX IF NOT EXISTS idx_payment_webhooks_invoice ON payment_webhooks(invoice_id);
   `);
-  console.log("Re-created payment_webhooks (rollback).");
+  console.log('Re-created payment_webhooks (rollback).');
 
   // 3. Re-create email_logs
   await knex.raw(`
@@ -71,7 +71,7 @@ exports.down = async function (knex) {
     CREATE INDEX IF NOT EXISTS idx_email_logs_user ON email_logs(user_id);
     CREATE INDEX IF NOT EXISTS idx_email_logs_status ON email_logs(status);
   `);
-  console.log("Re-created email_logs (rollback).");
+  console.log('Re-created email_logs (rollback).');
 
   // 4. Re-create system_settings
   await knex.raw(`
@@ -85,7 +85,7 @@ exports.down = async function (knex) {
     );
     CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(setting_key);
   `);
-  console.log("Re-created system_settings (rollback).");
+  console.log('Re-created system_settings (rollback).');
 
   // 5. RE-CREATE AUDIT LOGS
   await knex.raw(`
@@ -104,7 +104,7 @@ exports.down = async function (knex) {
     CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action);
     CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
   `);
-  console.log("Re-created audit_logs (rollback).");
+  console.log('Re-created audit_logs (rollback).');
 
   // 6. RE-CREATE NOTIFICATIONS
   await knex.raw(`
@@ -125,5 +125,5 @@ exports.down = async function (knex) {
     CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(is_read);
     CREATE INDEX IF NOT EXISTS idx_notifications_date ON notifications(created_at);
   `);
-  console.log("Re-created notifications (rollback).");
+  console.log('Re-created notifications (rollback).');
 };

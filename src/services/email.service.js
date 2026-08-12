@@ -1,22 +1,22 @@
-const axios = require("axios");
-require("dotenv").config();
+const axios = require('axios');
+require('dotenv').config();
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
 const sendEmail = async (to, subject, html) => {
   try {
     const response = await axios.post(
-      "https://api.brevo.com/v3/smtp/email",
+      'https://api.brevo.com/v3/smtp/email',
       {
-        sender: { email: process.env.EMAIL_FROM, name: "FitAddis" },
+        sender: { email: process.env.EMAIL_FROM, name: 'FitAddis' },
         to: [{ email: to }],
         subject: subject,
         htmlContent: html,
       },
       {
         headers: {
-          "api-key": BREVO_API_KEY,
-          "Content-Type": "application/json",
+          'api-key': BREVO_API_KEY,
+          'Content-Type': 'application/json',
         },
       },
     );

@@ -1,9 +1,9 @@
-const Redis = require("ioredis");
+const Redis = require('ioredis');
 
 const redisUrl = process.env.REDIS_URL;
 
 if (!redisUrl) {
-  console.error("REDIS_URL is not defined in .env");
+  console.error('REDIS_URL is not defined in .env');
   process.exit(1);
 }
 
@@ -22,12 +22,12 @@ const redisClient = new Redis(redisUrl, {
   },
 });
 
-redisClient.on("connect", () => {
-  console.log("Upstash Redis connected successfully");
+redisClient.on('connect', () => {
+  console.log('Upstash Redis connected successfully');
 });
 
-redisClient.on("error", (err) => {
-  console.error("Upstash Redis error:", err.message);
+redisClient.on('error', (err) => {
+  console.error('Upstash Redis error:', err.message);
 });
 
 const testRedisConnection = async () => {
@@ -36,7 +36,7 @@ const testRedisConnection = async () => {
     console.log(`Upstash Redis ping: ${pong}`);
     return true;
   } catch (error) {
-    console.error("Redis ping failed:", error.message);
+    console.error('Redis ping failed:', error.message);
     return false;
   }
 };
@@ -44,7 +44,7 @@ const testRedisConnection = async () => {
 // ---------- REFRESH TOKEN HELPERS ----------
 // TTL is set to 7 days (604800 seconds) by default
 const storeRefreshToken = async (userId, token, ttlSeconds = 604800) => {
-  await redisClient.set(`refresh:${userId}`, token, "EX", ttlSeconds);
+  await redisClient.set(`refresh:${userId}`, token, 'EX', ttlSeconds);
 };
 
 const getRefreshToken = async (userId) => {

@@ -1,11 +1,11 @@
-const knex = require("../db/db");
-const crypto = require("crypto");
+const knex = require('../db/db');
+const crypto = require('crypto');
 
 const CANCEL_WINDOW_HOURS = 2;
 
 const bookClass = async (memberProfileId, classId) => {
   const trx = await knex.transaction();
-  const random = crypto.randomBytes(3).toString("hex").toUpperCase();
+  const random = crypto.randomBytes(3).toString('hex').toUpperCase();
 
   try {
     const updatedClass = await trx.raw(
@@ -29,8 +29,8 @@ const bookClass = async (memberProfileId, classId) => {
 
       await trx.commit();
       return {
-        status: "waitlisted",
-        message: "Class id full. You are on the waitlist.",
+        status: 'waitlisted',
+        message: 'Class id full. You are on the waitlist.',
       };
     }
 
@@ -44,8 +44,8 @@ const bookClass = async (memberProfileId, classId) => {
     await trx.commit();
 
     return {
-      status: "confirmed",
-      message: "Booking successful",
+      status: 'confirmed',
+      message: 'Booking successful',
       class: updatedClass.rows[0],
     };
   } catch (error) {
@@ -75,11 +75,11 @@ const cancelBooking = async (bookingId) => {
 
     const booking = bookingResult.rows[0];
     if (!booking) {
-      throw new Error("Booking not found");
+      throw new Error('Booking not found');
     }
 
-    if (booking.status === "cancelled") {
-      throw new Error("Booking already cancelled");
+    if (booking.status === 'cancelled') {
+      throw new Error('Booking already cancelled');
     }
 
     // check cancellation window
@@ -151,8 +151,8 @@ const cancelBooking = async (bookingId) => {
     return {
       message:
         waitlistResult.rows.length > 0
-          ? "Booking cancelled. Waitlist member promoted successfully."
-          : "Booking cancelled successfully.",
+          ? 'Booking cancelled. Waitlist member promoted successfully.'
+          : 'Booking cancelled successfully.',
     };
   } catch (error) {
     await trx.rollback();
@@ -162,7 +162,7 @@ const cancelBooking = async (bookingId) => {
 
 const rescheduleBooking = async (bookingId, newClassId) => {
   const trx = await knex.transaction();
-  const random = crypto.randomBytes(3).toString("hex").toUpperCase();
+  const random = crypto.randomBytes(3).toString('hex').toUpperCase();
 
   try {
     const bookingResult = await trx.raw(
@@ -178,11 +178,11 @@ const rescheduleBooking = async (bookingId, newClassId) => {
     const booking = bookingResult.rows[0];
 
     if (!booking) {
-      throw new Error("Booking not found");
+      throw new Error('Booking not found');
     }
 
-    if (booking.status === "cancelled") {
-      throw new Error("Cannot reschedule a cancelled booking");
+    if (booking.status === 'cancelled') {
+      throw new Error('Cannot reschedule a cancelled booking');
     }
 
     // check cancellation window for original class
@@ -207,11 +207,11 @@ const rescheduleBooking = async (bookingId, newClassId) => {
     const newClass = newClassResult.rows[0];
 
     if (!newClass) {
-      throw new Error("Target class not found");
+      throw new Error('Target class not found');
     }
 
     if (newClass.current_bookings >= newClass.capacity) {
-      throw new Error("Target class is full");
+      throw new Error('Target class is full');
     }
 
     // update the original booking to cancelled
@@ -253,7 +253,7 @@ const rescheduleBooking = async (bookingId, newClassId) => {
     );
 
     await trx.commit();
-    return { message: "Booking rescheduled successfully" };
+    return { message: 'Booking rescheduled successfully' };
   } catch (error) {
     await trx.rollback();
     throw error;
