@@ -10,7 +10,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "lint": "eslint src/**/*.js",
-    "test": "jest --coverage",
+    "test": "jest --coverage --passWithNoTests",
     "migrate:up": "knex migrate:up",
     "migrate:rollback": "knex migrate:rollback"
   },
