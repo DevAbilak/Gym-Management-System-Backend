@@ -2,6 +2,7 @@ const authRoutes = require("./routes/auth.routes");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const { setupSwagger } = require("./config/swagger");
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.get("/health", (req, res) => {
     uptime: process.uptime(),
   });
 });
+
+// SWAGGER DOCS
+setupSwagger(app);
 
 // 404 Handler
 app.use("/*splat", (req, res) => {
