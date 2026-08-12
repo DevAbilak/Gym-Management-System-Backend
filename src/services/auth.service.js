@@ -8,35 +8,167 @@ const {
   RESET_PASSWORD_SUCCESSFUL_TEMPLATE,
 } = require('../utils/emailTemplates');
 const { sendEmail } = require('./email.service');
+const { generateUniqueMemberId } = require('./idGenerator.service');
 
 const SALT_ROUNDS = 12;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // REGISTER
 const registerUser = async (payload) => {
-  const { email, password, first_name, last_name, phone, role } = payload;
-
-  // check if user exists
-  const existing = await knex.raw('SELECT id FROM users WHERE email = ?', [
+  const {
     email,
-  ]);
+    password,
+    first_name,
+    last_name,
+    phone,
+    role = 'member',
+    // Member-specific fields (optional)
+    date_of_birth,
+    dietary_restrictions,
+    gender,
+    fitness_goal,
+    emergency_contact_name,
+    emergency_contact_phone,
+    blood_type,
+    // Trainer-specific fields (optional)
+    specialty,
+    years_of_experience,
+    certification,
+    hourly_rate,
+    bio,
+  } = payload;
 
-  if (existing.rows.length > 0) {
-    throw new Error('Email already registered');
-  }
+  const trx = await knex.transaction();
 
-  const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
+  try {
+    // ------- 1 USER CREATION --------
+    // check if user exists
+    const existing = await trx.raw('SELECT id FROM users WHERE email = ?', [
+      email,
+    ]);
 
-  // add user to db
-  const result = await knex.raw(
-    `
+    if (existing.rows.length > 0) {
+      throw new Error('Email already registered');
+    }
+
+    const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
+
+    // add user to db
+    const result = await trx.raw(
+      `
     INSERT INTO users (email, password_hash, first_name, last_name,phone, role) VALUES (?,?,?,?,?,?)
     RETURNING id, email, first_name, last_name, role
   `,
-    [email, password_hash, first_name, last_name, phone, role || 'member'],
-  );
+      [email, password_hash, first_name, last_name, phone, role || 'member'],
+    );
 
-  return result.rows[0];
+    const user = result.rows[0];
+
+    // -------- 2. ROLE BASED PROFILE CREATION ------
+    if (role === 'member') {
+      const unique_member_id = generateUniqueMemberId();
+
+      const result = await trx.raw(
+        `INSERT INTO member_profiles (
+      user_id, unique_member_id, date_of_birth, gender, blood_type, dietary_restrictions, fitness_goal, emergency_contact_name, emergency_contact_phone
+    ) VALUES (?,?,?,?,?,?,?,?,?) RETURNING *
+  `,
+        [
+          user.id,
+          unique_member_id,
+          date_of_birth || null,
+          gender || null,
+          blood_type || null,
+          dietary_restrictions || null,
+          fitness_goal || null,
+          emergency_contact_name || null,
+          emergency_contact_phone || null,
+        ],
+      );
+      const member = result.rows[0];
+
+      const fullResult = await trx.raw(
+        `
+        SELECT 
+          mp.*,
+          u.id, 
+          u.email, 
+          u.first_name, 
+          u.last_name, 
+          u.role
+        FROM member_profiles mp
+        JOIN users u ON mp.user_id = u.id
+        WHERE mp.id = ?
+      `,
+        [member.id],
+      );
+      await trx.commit();
+
+      return {
+        user: fullResult.rows[0],
+        message: 'Member registration complete! Welcome to FitAddis.',
+      };
+    } else if (role === 'trainer') {
+      const trainerResult = await trx.raw(
+        `
+        INSERT INTO trainers (
+          user_id,
+          specialty,
+          years_of_experience,
+          certification,
+          hourly_rate,
+          bio
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        RETURNING *
+      `,
+        [
+          user.id,
+          specialty || null,
+          years_of_experience || null,
+          certification || null,
+          hourly_rate || null,
+          bio || null,
+        ],
+      );
+
+      const trainer = trainerResult.rows[0];
+
+      const fullResult = await trx.raw(
+        `
+        SELECT 
+          tr.*,
+          u.id, 
+          u.email, 
+          u.first_name, 
+          u.last_name, 
+          u.role
+        FROM trainers tr
+        JOIN users u ON tr.user_id = u.id
+        WHERE tr.id = ?
+      `,
+        [trainer.id],
+      );
+
+      await trx.commit();
+
+      return {
+        user: fullResult.rows[0],
+        message: 'Trainer registration complete! Welcome to FitAddis.',
+      };
+    } else if (role === 'admin' || role === 'reception') {
+      await trx.commit();
+      return {
+        user,
+        message: `${role} user registered successfully.`,
+      };
+    } else {
+      await trx.rollback();
+      throw new Error(`Invalid role: ${role}`);
+    }
+  } catch (error) {
+    await trx.rollback();
+    throw error;
+  }
 };
 
 // LOGIN

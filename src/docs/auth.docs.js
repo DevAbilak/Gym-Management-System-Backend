@@ -6,32 +6,55 @@
 const authPaths = {
   '/auth/register': {
     post: {
-      summary: 'Register a new user account',
-      description: 'Creates a new user account with email, password, and role.',
+      summary:
+        'Unified Registration - Register as Member, Trainer, Admin, or Reception',
+      description: `Creates a user account and automatically creates the associated profile based on the role.
+        - **member**: Creates member_profiles record with unique ID.
+        - **trainer**: Creates trainers record.
+        - **admin/reception**: No additional profile required.`,
       tags: ['Authentication'],
       requestBody: {
         required: true,
         content: {
           'application/json': {
             schema: {
-              $ref: '#/components/schemas/RegisterRequest',
+              oneOf: [
+                { $ref: '#/components/schemas/MemberRegistration' },
+                { $ref: '#/components/schemas/TrainerRegistration' },
+                { $ref: '#/components/schemas/AdminRegistration' },
+                { $ref: '#/components/schemas/ReceptionRegistration' },
+              ],
+              discriminator: {
+                propertyName: 'role',
+                mapping: {
+                  member: '#/components/schemas/MemberRegistration',
+                  trainer: '#/components/schemas/TrainerRegistration',
+                  admin: '#/components/schemas/AdminRegistration',
+                  reception: '#/components/schemas/ReceptionRegistration',
+                },
+              },
             },
           },
         },
       },
       responses: {
         201: {
-          description: 'User successfully registered',
+          description: 'Registration successful (role-specific response)',
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/RegisterResponse',
+                oneOf: [
+                  { $ref: '#/components/schemas/MemberRegistrationResponse' },
+                  { $ref: '#/components/schemas/TrainerRegistrationResponse' },
+                  { $ref: '#/components/schemas/UserRegistrationResponse' },
+                ],
               },
             },
           },
         },
         400: {
-          description: 'Email already registered or validation error',
+          description:
+            'Email already registered, invalid role, or validation error',
         },
         500: {
           description: 'Server error',
@@ -69,9 +92,6 @@ const authPaths = {
         401: {
           description: 'Invalid credentials or account deactivated',
         },
-        500: {
-          description: 'Server error',
-        },
       },
     },
   },
@@ -86,14 +106,7 @@ const authPaths = {
         content: {
           'application/json': {
             schema: {
-              type: 'object',
-              required: ['refreshToken'],
-              properties: {
-                refreshToken: {
-                  type: 'string',
-                  example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-                },
-              },
+              $ref: '#/components/schemas/RefreshTokenRequest',
             },
           },
         },
@@ -104,12 +117,7 @@ const authPaths = {
           content: {
             'application/json': {
               schema: {
-                type: 'object',
-                properties: {
-                  accessToken: {
-                    type: 'string',
-                  },
-                },
+                $ref: '#/components/schemas/RefreshTokenResponse',
               },
             },
           },
@@ -134,13 +142,7 @@ const authPaths = {
           content: {
             'application/json': {
               schema: {
-                type: 'object',
-                properties: {
-                  message: {
-                    type: 'string',
-                    example: 'Logged out successfully',
-                  },
-                },
+                $ref: '#/components/schemas/MessageResponse',
               },
             },
           },
@@ -163,15 +165,7 @@ const authPaths = {
         content: {
           'application/json': {
             schema: {
-              type: 'object',
-              required: ['email'],
-              properties: {
-                email: {
-                  type: 'string',
-                  format: 'email',
-                  example: 'john.doe@example.com',
-                },
-              },
+              $ref: '#/components/schemas/ForgotPasswordRequest',
             },
           },
         },
@@ -183,13 +177,7 @@ const authPaths = {
           content: {
             'application/json': {
               schema: {
-                type: 'object',
-                properties: {
-                  message: {
-                    type: 'string',
-                    example: 'If the email exists, a reset link will be sent',
-                  },
-                },
+                $ref: '#/components/schemas/MessageResponse',
               },
             },
           },
@@ -225,13 +213,7 @@ const authPaths = {
           content: {
             'application/json': {
               schema: {
-                type: 'object',
-                properties: {
-                  message: {
-                    type: 'string',
-                    example: 'Password updated successfully',
-                  },
-                },
+                $ref: '#/components/schemas/MessageResponse',
               },
             },
           },
@@ -248,67 +230,198 @@ const authPaths = {
 };
 
 const authSchemas = {
-  RegisterRequest: {
+  // ---------- BASE REQUEST (Shared fields) ----------
+  BaseRegistration: {
     type: 'object',
-    required: ['email', 'password', 'first_name', 'last_name'],
+    required: ['email', 'password', 'first_name', 'last_name', 'role'],
     properties: {
-      email: {
-        type: 'string',
-        format: 'email',
-        example: 'john.doe@example.com',
-      },
+      email: { type: 'string', format: 'email', example: 'alex@gmail.com' },
       password: {
         type: 'string',
         format: 'password',
         minLength: 8,
         example: 'SecurePass123!',
       },
-      first_name: {
-        type: 'string',
-        example: 'John',
-      },
-      last_name: {
-        type: 'string',
-        example: 'Doe',
-      },
-      phone: {
-        type: 'string',
-        example: '+251911111111',
-      },
+      first_name: { type: 'string', example: 'Alex' },
+      last_name: { type: 'string', example: 'Asfaw' },
+      phone: { type: 'string', example: '+251 9 12 10-28 34' },
       role: {
         type: 'string',
-        enum: ['admin', 'trainer', 'member', 'reception'],
-        default: 'member',
-        example: 'member',
+        enum: ['member', 'trainer', 'admin', 'reception'],
       },
     },
   },
-  RegisterResponse: {
+
+  // ---------- ROLE-SPECIFIC REGISTRATION REQUESTS ----------
+  MemberRegistration: {
+    allOf: [
+      { $ref: '#/components/schemas/BaseRegistration' },
+      {
+        type: 'object',
+        required: [
+          'role',
+          'date_of_birth',
+          'gender',
+          'fitness_goal',
+          'emergency_contact_name',
+          'emergency_contact_phone',
+        ],
+        properties: {
+          role: { type: 'string', enum: ['member'] },
+          date_of_birth: {
+            type: 'string',
+            format: 'date',
+            example: '1996-01-01',
+          },
+          gender: { type: 'string', enum: ['male', 'female'], example: 'male' },
+          blood_type: {
+            type: 'string',
+            enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+            example: 'O+',
+          },
+          dietary_restrictions: { type: 'string', example: 'Gluten-Free' },
+          fitness_goal: {
+            type: 'string',
+            enum: [
+              'weight_loss',
+              'muscle_building',
+              'maintenance',
+              'general_fitness',
+            ],
+            example: 'muscle_building',
+          },
+          emergency_contact_name: { type: 'string', example: 'Yared Alemu' },
+          emergency_contact_phone: { type: 'string', example: '0912234543' },
+        },
+      },
+    ],
+  },
+  TrainerRegistration: {
+    allOf: [
+      { $ref: '#/components/schemas/BaseRegistration' },
+      {
+        type: 'object',
+        required: [
+          'role',
+          'specialty',
+          'years_of_experience',
+          'certification',
+          'hourly_rate',
+        ],
+        properties: {
+          role: { type: 'string', enum: ['trainer'] },
+          specialty: { type: 'string', example: 'HIIT & Strength Training' },
+          years_of_experience: { type: 'integer', example: 5 },
+          certification: { type: 'string', example: 'NSCA-CPT' },
+          hourly_rate: { type: 'number', format: 'float', example: 45.0 },
+          bio: {
+            type: 'string',
+            example: 'Certified trainer with 5+ years of experience...',
+          },
+        },
+      },
+    ],
+  },
+  AdminRegistration: {
+    allOf: [
+      { $ref: '#/components/schemas/BaseRegistration' },
+      {
+        type: 'object',
+        required: ['role'],
+        properties: {
+          role: { type: 'string', enum: ['admin'] },
+        },
+      },
+    ],
+  },
+  ReceptionRegistration: {
+    allOf: [
+      { $ref: '#/components/schemas/BaseRegistration' },
+      {
+        type: 'object',
+        required: ['role'],
+        properties: {
+          role: { type: 'string', enum: ['reception'] },
+        },
+      },
+    ],
+  },
+
+  // ---------- REGISTRATION RESPONSES ----------
+  MemberRegistrationResponse: {
     type: 'object',
     properties: {
-      id: {
-        type: 'string',
-        format: 'uuid',
-        example: '550e8400-e29b-41d4-a716-446655440000',
+      user: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          user_id: { type: 'string', format: 'uuid' },
+          unique_member_id: { type: 'string', example: 'GYM-A3F9-7' },
+          date_of_birth: { type: 'string', format: 'date' },
+          gender: { type: 'string' },
+          blood_type: { type: 'string' },
+          dietary_restrictions: { type: 'string' },
+          fitness_goal: { type: 'string' },
+          emergency_contact_name: { type: 'string' },
+          emergency_contact_phone: { type: 'string' },
+          email: { type: 'string' },
+          first_name: { type: 'string' },
+          last_name: { type: 'string' },
+          role: { type: 'string', example: 'member' },
+        },
       },
-      email: {
+      message: {
         type: 'string',
-        example: 'john.doe@example.com',
-      },
-      first_name: {
-        type: 'string',
-        example: 'John',
-      },
-      last_name: {
-        type: 'string',
-        example: 'Doe',
-      },
-      role: {
-        type: 'string',
-        example: 'member',
+        example: 'Member registration complete! Welcome to FitAddis.',
       },
     },
   },
+  TrainerRegistrationResponse: {
+    type: 'object',
+    properties: {
+      user: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          user_id: { type: 'string', format: 'uuid' },
+          specialty: { type: 'string' },
+          years_of_experience: { type: 'integer' },
+          certification: { type: 'string' },
+          hourly_rate: { type: 'number' },
+          bio: { type: 'string' },
+          email: { type: 'string' },
+          first_name: { type: 'string' },
+          last_name: { type: 'string' },
+          role: { type: 'string', example: 'trainer' },
+        },
+      },
+      message: {
+        type: 'string',
+        example: 'Trainer registration complete! Welcome to FitAddis.',
+      },
+    },
+  },
+  UserRegistrationResponse: {
+    type: 'object',
+    properties: {
+      user: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          email: { type: 'string' },
+          first_name: { type: 'string' },
+          last_name: { type: 'string' },
+          role: { type: 'string', example: 'admin' },
+        },
+      },
+      message: {
+        type: 'string',
+        example: 'admin user registered successfully.',
+      },
+    },
+  },
+
+  // ---------- LOGIN ----------
   LoginRequest: {
     type: 'object',
     required: ['email', 'password'],
@@ -348,6 +461,37 @@ const authSchemas = {
       },
     },
   },
+
+  // ---------- REFRESH TOKEN ----------
+  RefreshTokenRequest: {
+    type: 'object',
+    required: ['refreshToken'],
+    properties: {
+      refreshToken: {
+        type: 'string',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      },
+    },
+  },
+  RefreshTokenResponse: {
+    type: 'object',
+    properties: {
+      accessToken: { type: 'string' },
+    },
+  },
+
+  // ---------- FORGOT / RESET PASSWORD ----------
+  ForgotPasswordRequest: {
+    type: 'object',
+    required: ['email'],
+    properties: {
+      email: {
+        type: 'string',
+        format: 'email',
+        example: 'john.doe@example.com',
+      },
+    },
+  },
   ResetPasswordRequest: {
     type: 'object',
     required: ['email', 'token', 'newPassword'],
@@ -368,6 +512,14 @@ const authSchemas = {
         minLength: 8,
         example: 'NewSecurePass123!',
       },
+    },
+  },
+
+  // ---------- GENERIC MESSAGE RESPONSE ----------
+  MessageResponse: {
+    type: 'object',
+    properties: {
+      message: { type: 'string' },
     },
   },
 };

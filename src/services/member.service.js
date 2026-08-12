@@ -1,36 +1,4 @@
 const knex = require('../db/db');
-const { generateUniqueMemberId } = require('./idGenerator.service');
-
-const createMember = async (payload) => {
-  const {
-    user_id,
-    date_of_birth,
-    gender,
-    fitness_goal,
-    emergency_contact_name,
-    emergency_contact_phone,
-  } = payload;
-
-  const unique_member_id = generateUniqueMemberId();
-
-  const result = await knex.raw(
-    `INSERT INTO member_profiles (
-      user_id, unique_member_id, date_of_birth, gender, fitness_goal, emergency_contact_name, emergency_contact_phone
-    ) VALUES (?,?,?,?,?,?,?) RETURNING *
-  `,
-    [
-      user_id,
-      unique_member_id,
-      date_of_birth,
-      gender,
-      fitness_goal,
-      emergency_contact_name,
-      emergency_contact_phone,
-    ],
-  );
-
-  return result.rows[0];
-};
 
 const getAllMembers = async () => {
   const result = await knex.raw('SELECT * FROM member_profiles');
@@ -96,7 +64,6 @@ const updateMember = async (id, updates) => {
 };
 
 module.exports = {
-  createMember,
   getAllMembers,
   getMemberById,
   getMemberByUniqueId,

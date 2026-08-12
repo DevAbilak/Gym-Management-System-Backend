@@ -1,8 +1,9 @@
-const authRoutes = require('./routes/auth.routes');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { setupSwagger } = require('./config/swagger');
+const authRoutes = require('./routes/auth.routes');
+const memberRoutes = require('./routes/member.routes');
 
 const app = express();
 
@@ -11,6 +12,7 @@ app.use(helmet());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/members', memberRoutes);
 
 // health check
 app.get('/health', (req, res) => {
