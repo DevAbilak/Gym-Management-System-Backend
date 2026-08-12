@@ -3,7 +3,10 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { redisClient } = require("../config/redis");
-const { RESET_PASSWORD_TEMPLATE } = require("../utils/emailTempletes");
+const {
+  RESET_PASSWORD_TEMPLATE,
+  RESET_PASSWORD_SUCCESSFUL_TEMPLATE,
+} = require("../utils/emailTemplates");
 const { sendEmail } = require("./email.service");
 
 const SALT_ROUNDS = 12;
@@ -167,6 +170,16 @@ const forgotPassword = async (email) => {
 
 // RESET PASSWORD
 const resetPassword = async (email, token, newPassword) => {
+  const result = await knex.raw(
+    `SELECT email,first_name FROM users WHERE email = ?`,
+    [email],
+  );
+  const user = result.rows[0];
+
+  if (!user) {
+    throw new Error("User with this email does not exist.");
+  }
+
   const storedToken = await redisClient.get(`reset:${email}`);
 
   if (storedToken !== token) {
@@ -181,6 +194,12 @@ const resetPassword = async (email, token, newPassword) => {
   );
 
   await redisClient.del(`reset:${email}`);
+
+  const html = RESET_PASSWORD_SUCCESSFUL_TEMPLATE.replace(
+    "{USER_NAME}",
+    user.first_name,
+  ).replaceAll("{LOGIN_LINK}", `${process.env.CLIENT_URL}/login`);
+  await sendEmail(user.email, "Password Reset Successful - FitAddis", html);
 
   return { message: "Password updated successfully" };
 };
