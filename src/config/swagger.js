@@ -8,9 +8,7 @@ const swaggerUi = require('swagger-ui-express');
 
 // Import modular documentation
 const { authPaths, authSchemas } = require('../docs/auth.docs');
-// Import future docs as they are created
-// const { memberPaths, memberSchemas } = require('../docs/member.docs');
-// const { subscriptionPaths, subscriptionSchemas } = require('../docs/subscription.docs');
+const { adminPaths, adminSchemas } = require('../docs/admin.docs');
 
 const swaggerSpec = {
   openapi: '3.0.0',
@@ -25,19 +23,18 @@ const swaggerSpec = {
   },
   servers: [
     {
-      url: 'http://localhost:3000/api',
-      description: 'Development Server',
-    },
-    {
       url: 'https://gym-management-system-backend-xb5m.onrender.com/api',
       description: 'Production Server',
+    },
+    {
+      url: 'http://localhost:3000/api',
+      description: 'Development Server',
     },
   ],
   paths: {
     // Merge all modular paths here
     ...authPaths,
-    // ...memberPaths,
-    // ...subscriptionPaths,
+    ...adminPaths,
   },
   components: {
     securitySchemes: {
@@ -51,8 +48,7 @@ const swaggerSpec = {
     schemas: {
       // Merge all modular schemas here
       ...authSchemas,
-      // ...memberSchemas,
-      // ...subscriptionSchemas,
+      ...adminSchemas,
     },
   },
 };

@@ -6,12 +6,13 @@
 const authPaths = {
   '/auth/register': {
     post: {
-      summary:
-        'Unified Registration - Register as Member, Trainer, Admin, or Reception',
+      summary: 'Public Registration - Register as Member or Trainer',
       description: `Creates a user account and automatically creates the associated profile based on the role.
-        - **member**: Creates member_profiles record with unique ID.
-        - **trainer**: Creates trainers record.
-        - **admin/reception**: No additional profile required.`,
+        - **member**: Creates a member profile with a unique gym ID.
+        - **trainer**: Creates a trainer profile.
+        
+        ⚠️ **Public users can only register as 'member' or 'trainer'.** 
+        For admin or reception accounts, please contact an administrator.`,
       tags: ['Authentication'],
       requestBody: {
         required: true,
@@ -19,19 +20,34 @@ const authPaths = {
           'application/json': {
             schema: {
               oneOf: [
-                { $ref: '#/components/schemas/MemberRegistration' },
-                { $ref: '#/components/schemas/TrainerRegistration' },
-                { $ref: '#/components/schemas/AdminRegistration' },
-                { $ref: '#/components/schemas/ReceptionRegistration' },
+                { $ref: '#/components/schemas/PublicMemberRegistration' },
+                { $ref: '#/components/schemas/PublicTrainerRegistration' },
               ],
               discriminator: {
                 propertyName: 'role',
                 mapping: {
-                  member: '#/components/schemas/MemberRegistration',
-                  trainer: '#/components/schemas/TrainerRegistration',
-                  admin: '#/components/schemas/AdminRegistration',
-                  reception: '#/components/schemas/ReceptionRegistration',
+                  member: '#/components/schemas/PublicMemberRegistration',
+                  trainer: '#/components/schemas/PublicTrainerRegistration',
                 },
+              },
+            },
+            example: {
+              // Member Example
+              summary: 'Member Registration Example',
+              value: {
+                email: 'alex@gmail.com',
+                password: 'SecurePass123!',
+                first_name: 'Alex',
+                last_name: 'Asfaw',
+                phone: '+251 9 12 10-28 34',
+                role: 'member',
+                date_of_birth: '1996-01-01',
+                gender: 'male',
+                blood_type: 'O+',
+                dietary_restrictions: 'Gluten-Free',
+                fitness_goal: 'muscle_building',
+                emergency_contact_name: 'Yared Alemu',
+                emergency_contact_phone: '0912234543',
               },
             },
           },
@@ -46,7 +62,6 @@ const authPaths = {
                 oneOf: [
                   { $ref: '#/components/schemas/MemberRegistrationResponse' },
                   { $ref: '#/components/schemas/TrainerRegistrationResponse' },
-                  { $ref: '#/components/schemas/UserRegistrationResponse' },
                 ],
               },
             },
@@ -54,7 +69,11 @@ const authPaths = {
         },
         400: {
           description:
-            'Email already registered, invalid role, or validation error',
+            'Email already registered, validation error, or missing required fields',
+        },
+        403: {
+          description:
+            'Attempted to register with disallowed role (admin/reception)',
         },
         500: {
           description: 'Server error',

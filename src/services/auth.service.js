@@ -179,7 +179,7 @@ const loginUser = async (email, password) => {
   const user = result.rows[0];
 
   if (!user) {
-    throw new Error('User with this email does not exist.Please register');
+    throw new Error('User does not exist.Please register');
   }
 
   if (!user.is_active) {
@@ -310,7 +310,7 @@ const resetPassword = async (email, token, newPassword) => {
   const user = result.rows[0];
 
   if (!user) {
-    throw new Error('User with this email does not exist.');
+    throw new Error('User does not exist.');
   }
 
   const storedToken = await redisClient.get(`reset:${email}`);
