@@ -32,7 +32,6 @@ const authPaths = {
               },
             },
             example: {
-              // Member Example
               summary: 'Member Registration Example',
               value: {
                 email: 'alex@gmail.com',
@@ -70,10 +69,41 @@ const authPaths = {
         400: {
           description:
             'Email already registered, validation error, or missing required fields',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    examples: [
+                      'Email already registered',
+                      'Invalid role: admin',
+                      'Email, password, first_name, and last_name are required',
+                    ],
+                  },
+                },
+              },
+            },
+          },
         },
         403: {
           description:
             'Attempted to register with disallowed role (admin/reception)',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    example:
+                      'Public registration only allows: member, trainer.',
+                  },
+                },
+              },
+            },
+          },
         },
         500: {
           description: 'Server error',
@@ -94,6 +124,10 @@ const authPaths = {
             schema: {
               $ref: '#/components/schemas/LoginRequest',
             },
+            example: {
+              email: 'john.doe@example.com',
+              password: 'SecurePass123!',
+            },
           },
         },
       },
@@ -108,8 +142,44 @@ const authPaths = {
             },
           },
         },
+        400: {
+          description: 'Email and password are required',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    example: 'Email and password are required',
+                  },
+                },
+              },
+            },
+          },
+        },
         401: {
-          description: 'Invalid credentials or account deactivated',
+          description: 'Authentication failed',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    examples: [
+                      'User does not exist.Please register',
+                      'Account is deactivated',
+                      'Invalid password',
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+        500: {
+          description: 'Server error',
         },
       },
     },
@@ -127,6 +197,9 @@ const authPaths = {
             schema: {
               $ref: '#/components/schemas/RefreshTokenRequest',
             },
+            example: {
+              refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+            },
           },
         },
       },
@@ -141,18 +214,50 @@ const authPaths = {
             },
           },
         },
+        400: {
+          description: 'Refresh token required',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    example: 'Refresh token required',
+                  },
+                },
+              },
+            },
+          },
+        },
         401: {
           description: 'Invalid or expired refresh token',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    examples: ['Invalid refresh token', 'User not found'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        500: {
+          description: 'Server error',
         },
       },
     },
   },
 
   '/auth/logout': {
-    post: {
+    get: {
       summary: 'Logout user',
       description:
-        'Invalidates the user\'s refresh token. Requires Bearer token.',
+        'Invalidates the user\'s refresh token in Redis. Requires Bearer token.',
       tags: ['Authentication'],
       security: [{ BearerAuth: [] }],
       responses: {
@@ -168,6 +273,26 @@ const authPaths = {
         },
         401: {
           description: 'Unauthorized (missing or invalid token)',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    examples: [
+                      'Authorization token required. Please log in first.',
+                      'Token expired. Please refresh your token or log in again.',
+                      'Invalid token. Please log in again.',
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+        500: {
+          description: 'Server error',
         },
       },
     },
@@ -186,6 +311,9 @@ const authPaths = {
             schema: {
               $ref: '#/components/schemas/ForgotPasswordRequest',
             },
+            example: {
+              email: 'john.doe@example.com',
+            },
           },
         },
       },
@@ -203,9 +331,36 @@ const authPaths = {
         },
         400: {
           description: 'Email is required',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    example: 'Email is required',
+                  },
+                },
+              },
+            },
+          },
         },
         500: {
-          description: 'Server error',
+          description: 'Unable to send reset email',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    example:
+                      'Unable to send reset email. Please try again later.',
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -214,7 +369,8 @@ const authPaths = {
   '/auth/reset-password': {
     post: {
       summary: 'Reset password using token',
-      description: 'Resets the user\'s password using a valid reset token.',
+      description:
+        'Resets the user\'s password using a valid reset token received via email.',
       tags: ['Authentication'],
       requestBody: {
         required: true,
@@ -222,6 +378,11 @@ const authPaths = {
           'application/json': {
             schema: {
               $ref: '#/components/schemas/ResetPasswordRequest',
+            },
+            example: {
+              email: 'john.doe@example.com',
+              token: 'a1b2c3d4e5f67890...',
+              newPassword: 'NewSecurePass123!',
             },
           },
         },
@@ -238,7 +399,24 @@ const authPaths = {
           },
         },
         400: {
-          description: 'Invalid or expired token, or email required',
+          description: 'Invalid or expired token, or missing required fields',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  error: {
+                    type: 'string',
+                    examples: [
+                      'Email, token, and new password are required',
+                      'Invalid or expired reset token',
+                      'User does not exist.',
+                    ],
+                  },
+                },
+              },
+            },
+          },
         },
         500: {
           description: 'Server error',
@@ -249,8 +427,8 @@ const authPaths = {
 };
 
 const authSchemas = {
-  // ---------- BASE REQUEST (Shared fields) ----------
-  BaseRegistration: {
+  // ---------- PUBLIC REGISTRATION (Restricted to Member & Trainer) ----------
+  PublicBaseRegistration: {
     type: 'object',
     required: ['email', 'password', 'first_name', 'last_name', 'role'],
     properties: {
@@ -266,15 +444,16 @@ const authSchemas = {
       phone: { type: 'string', example: '+251 9 12 10-28 34' },
       role: {
         type: 'string',
-        enum: ['member', 'trainer', 'admin', 'reception'],
+        enum: ['member', 'trainer'],
+        description: 'Public registration only allows member or trainer roles.',
+        example: 'member',
       },
     },
   },
 
-  // ---------- ROLE-SPECIFIC REGISTRATION REQUESTS ----------
-  MemberRegistration: {
+  PublicMemberRegistration: {
     allOf: [
-      { $ref: '#/components/schemas/BaseRegistration' },
+      { $ref: '#/components/schemas/PublicBaseRegistration' },
       {
         type: 'object',
         required: [
@@ -315,9 +494,10 @@ const authSchemas = {
       },
     ],
   },
-  TrainerRegistration: {
+
+  PublicTrainerRegistration: {
     allOf: [
-      { $ref: '#/components/schemas/BaseRegistration' },
+      { $ref: '#/components/schemas/PublicBaseRegistration' },
       {
         type: 'object',
         required: [
@@ -341,29 +521,33 @@ const authSchemas = {
       },
     ],
   },
-  AdminRegistration: {
-    allOf: [
-      { $ref: '#/components/schemas/BaseRegistration' },
-      {
-        type: 'object',
-        required: ['role'],
-        properties: {
-          role: { type: 'string', enum: ['admin'] },
-        },
+
+  // ---------- ADMIN REGISTRATION (Full access - documented in admin.docs.js) ----------
+  AdminRegistrationRequest: {
+    type: 'object',
+    required: ['email', 'password', 'first_name', 'last_name', 'role'],
+    properties: {
+      email: {
+        type: 'string',
+        format: 'email',
+        example: 'reception@fitaddis.com',
       },
-    ],
-  },
-  ReceptionRegistration: {
-    allOf: [
-      { $ref: '#/components/schemas/BaseRegistration' },
-      {
-        type: 'object',
-        required: ['role'],
-        properties: {
-          role: { type: 'string', enum: ['reception'] },
-        },
+      password: {
+        type: 'string',
+        format: 'password',
+        minLength: 8,
+        example: 'SecurePass123!',
       },
-    ],
+      first_name: { type: 'string', example: 'Sarah' },
+      last_name: { type: 'string', example: 'Johnson' },
+      phone: { type: 'string', example: '+251 9 11 22-33-44' },
+      role: {
+        type: 'string',
+        enum: ['member', 'trainer', 'admin', 'reception'],
+        description: 'Admin can assign any role',
+        example: 'reception',
+      },
+    },
   },
 
   // ---------- REGISTRATION RESPONSES ----------
@@ -395,6 +579,7 @@ const authSchemas = {
       },
     },
   },
+
   TrainerRegistrationResponse: {
     type: 'object',
     properties: {
@@ -420,25 +605,6 @@ const authSchemas = {
       },
     },
   },
-  UserRegistrationResponse: {
-    type: 'object',
-    properties: {
-      user: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          email: { type: 'string' },
-          first_name: { type: 'string' },
-          last_name: { type: 'string' },
-          role: { type: 'string', example: 'admin' },
-        },
-      },
-      message: {
-        type: 'string',
-        example: 'admin user registered successfully.',
-      },
-    },
-  },
 
   // ---------- LOGIN ----------
   LoginRequest: {
@@ -457,6 +623,7 @@ const authSchemas = {
       },
     },
   },
+
   LoginResponse: {
     type: 'object',
     properties: {
@@ -492,6 +659,7 @@ const authSchemas = {
       },
     },
   },
+
   RefreshTokenResponse: {
     type: 'object',
     properties: {
@@ -511,6 +679,7 @@ const authSchemas = {
       },
     },
   },
+
   ResetPasswordRequest: {
     type: 'object',
     required: ['email', 'token', 'newPassword'],
@@ -523,7 +692,7 @@ const authSchemas = {
       token: {
         type: 'string',
         description: 'Reset token received via email',
-        example: 'a1b2c3d4e5f6...',
+        example: 'a1b2c3d4e5f67890...',
       },
       newPassword: {
         type: 'string',
