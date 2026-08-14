@@ -19,35 +19,22 @@ const authPaths = {
         content: {
           'application/json': {
             schema: {
-              oneOf: [
-                { $ref: '#/components/schemas/PublicMemberRegistration' },
-                { $ref: '#/components/schemas/PublicTrainerRegistration' },
-              ],
-              discriminator: {
-                propertyName: 'role',
-                mapping: {
-                  member: '#/components/schemas/PublicMemberRegistration',
-                  trainer: '#/components/schemas/PublicTrainerRegistration',
-                },
-              },
+              $ref: '#/components/schemas/PublicRegistrationRequest',
             },
             example: {
-              summary: 'Member Registration Example',
-              value: {
-                email: 'alex@gmail.com',
-                password: 'SecurePass123!',
-                first_name: 'Alex',
-                last_name: 'Asfaw',
-                phone: '+251 9 12 10-28 34',
-                role: 'member',
-                date_of_birth: '1996-01-01',
-                gender: 'male',
-                blood_type: 'O+',
-                dietary_restrictions: 'Gluten-Free',
-                fitness_goal: 'muscle_building',
-                emergency_contact_name: 'Yared Alemu',
-                emergency_contact_phone: '0912234543',
-              },
+              email: 'alex@gmail.com',
+              password: 'SecurePass123!',
+              first_name: 'Alex',
+              last_name: 'Asfaw',
+              phone: '+251 9 12 10-28 34',
+              role: 'member',
+              date_of_birth: '1996-01-01',
+              gender: 'male',
+              blood_type: 'O+',
+              dietary_restrictions: 'Gluten-Free',
+              fitness_goal: 'muscle_building',
+              emergency_contact_name: 'Yared Alemu',
+              emergency_contact_phone: '0912234543',
             },
           },
         },
@@ -428,6 +415,70 @@ const authPaths = {
 
 const authSchemas = {
   // ---------- PUBLIC REGISTRATION (Restricted to Member & Trainer) ----------
+  PublicRegistrationRequest: {
+    type: 'object',
+    required: [
+      'email',
+      'password',
+      'first_name',
+      'last_name',
+      'role',
+      'date_of_birth',
+      'gender',
+      'fitness_goal',
+      'emergency_contact_name',
+      'emergency_contact_phone',
+    ],
+    properties: {
+      // ---- Common fields ----
+      email: { type: 'string', format: 'email', example: 'alex@gmail.com' },
+      password: {
+        type: 'string',
+        format: 'password',
+        minLength: 8,
+        example: 'SecurePass123!',
+      },
+      first_name: { type: 'string', example: 'Alex' },
+      last_name: { type: 'string', example: 'Asfaw' },
+      phone: { type: 'string', example: '+251 9 12 10-28 34' },
+      role: {
+        type: 'string',
+        enum: ['member', 'trainer'],
+        description: 'Public registration only allows member or trainer roles.',
+        example: 'member',
+      },
+      // ---- Member fields ----
+      date_of_birth: { type: 'string', format: 'date', example: '1996-01-01' },
+      gender: { type: 'string', enum: ['male', 'female'], example: 'male' },
+      blood_type: {
+        type: 'string',
+        enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+        example: 'O+',
+      },
+      dietary_restrictions: { type: 'string', example: 'Gluten-Free' },
+      fitness_goal: {
+        type: 'string',
+        enum: [
+          'weight_loss',
+          'muscle_building',
+          'maintenance',
+          'general_fitness',
+        ],
+        example: 'muscle_building',
+      },
+      emergency_contact_name: { type: 'string', example: 'Yared Alemu' },
+      emergency_contact_phone: { type: 'string', example: '0912234543' },
+      // ---- Trainer fields ----
+      specialty: { type: 'string', example: 'HIIT & Strength Training' },
+      years_of_experience: { type: 'integer', example: 5 },
+      certification: { type: 'string', example: 'NSCA-CPT' },
+      hourly_rate: { type: 'number', format: 'float', example: 45.0 },
+      bio: {
+        type: 'string',
+        example: 'Certified trainer with 5+ years of experience...',
+      },
+    },
+  },
   PublicBaseRegistration: {
     type: 'object',
     required: ['email', 'password', 'first_name', 'last_name', 'role'],

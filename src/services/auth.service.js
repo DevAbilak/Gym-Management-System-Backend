@@ -59,7 +59,14 @@ const registerUser = async (payload) => {
     INSERT INTO users (email, password_hash, first_name, last_name,phone, role) VALUES (?,?,?,?,?,?)
     RETURNING id, email, first_name, last_name, role
   `,
-      [email, password_hash, first_name, last_name, phone, role || 'member'],
+      [
+        email,
+        password_hash,
+        first_name,
+        last_name,
+        phone || null,
+        role || 'member',
+      ],
     );
 
     const user = result.rows[0];
