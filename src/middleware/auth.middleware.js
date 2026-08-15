@@ -25,6 +25,12 @@ const authenticate = (req, res, next) => {
 
     next();
   } catch (error) {
+    // Ensuring headers are exposed even on error responses
+    res.setHeader(
+      'Access-Control-Expose-Headers',
+      (res.getHeader('Access-Control-Expose-Headers') || '') +
+        ', x-access-token, x-refresh-status',
+    );
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         error: 'Token expired. Please refresh your token or log in again.',

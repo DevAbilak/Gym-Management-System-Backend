@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { setupSwagger } = require('./config/swagger');
+const { handleRefreshToken } = require('./middleware/refreshToken.middleware');
 const authRoutes = require('./routes/auth.routes');
 const memberRoutes = require('./routes/member.routes');
 const adminRoutes = require('./routes/admin.routes');
@@ -11,6 +12,7 @@ const app = express();
 app.use(cors());
 app.use(helmet());
 app.use(express.json());
+app.use(handleRefreshToken);
 
 // public routes
 app.use('/api/auth', authRoutes);
