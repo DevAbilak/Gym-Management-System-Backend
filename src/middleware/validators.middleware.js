@@ -1,4 +1,4 @@
-const { body, validationResult } = require('express-validator');
+const { body, validationResult, param } = require('express-validator');
 
 // Helper: handle validation errors
 const handleValidationErrors = (req, res, next) => {
@@ -16,6 +16,7 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
+// ----------------- AUTH VALIDATORS ------------------
 // Registration validator
 const validateRegistration = [
   // common fields for all roles
@@ -115,6 +116,7 @@ const validateLogin = [
   handleValidationErrors,
 ];
 
+// Forgot password validator
 const validateForgotPassword = [
   body('email')
     .isEmail()
@@ -124,6 +126,7 @@ const validateForgotPassword = [
   handleValidationErrors,
 ];
 
+// Reset password validator
 const validateResetPassword = [
   body('email')
     .isEmail()
@@ -141,9 +144,99 @@ const validateResetPassword = [
   handleValidationErrors,
 ];
 
+// ----------------- CLASS VALIDATORS ------------------
+// create class validator
+const validateCreateClass = [
+  body('trainer_id')
+    .notEmpty()
+    .withMessage('trainer_id is required')
+    .isUUID()
+    .withMessage('trainer_id must be a valid UUID'),
+  body('name')
+    .notEmpty()
+    .withMessage('Class name is required')
+    .isString()
+    .withMessage('Class name must be a string'),
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('Description must be a string'),
+  body('category')
+    .optional()
+    .isIn(['yoga', 'pilates', 'hiit', 'spin', 'strength', 'dance', 'other'])
+    .withMessage('Invalid category'),
+  body('difficulty')
+    .optional()
+    .isIn(['beginner', 'intermediate', 'advanced'])
+    .withMessage('Invalid difficulty level'),
+  body('capacity')
+    .notEmpty()
+    .withMessage('Capacity is required')
+    .isInt({ min: 1 })
+    .withMessage('Capacity must be at least 1'),
+  body('start_time')
+    .notEmpty()
+    .withMessage('start_time is required')
+    .isISO8601()
+    .withMessage('start_time must be a valid ISO datetime'),
+  body('end_time')
+    .notEmpty()
+    .withMessage('end_time is required')
+    .isISO8601()
+    .withMessage('end_time must be a valid ISO datetime'),
+  body('location')
+    .optional()
+    .isString()
+    .withMessage('Location must be a string'),
+
+  handleValidationErrors,
+];
+
+// update class validator
+const validateUpdateClass = [
+  param('id').isUUID().withMessage('Invalid class ID format'),
+  body('name').optional().isString().withMessage('Name must be a string'),
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('Description must be a string'),
+  body('category')
+    .optional()
+    .isIn(['yoga', 'pilates', 'hiit', 'spin', 'strength', 'dance', 'other'])
+    .withMessage('Invalid category'),
+  body('difficulty')
+    .optional()
+    .isIn(['beginner', 'intermediate', 'advanced'])
+    .withMessage('Invalid difficulty level'),
+  body('capacity')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Capacity must be at least 1'),
+  body('start_time')
+    .optional()
+    .isISO8601()
+    .withMessage('start_time must be a valid ISO datetime'),
+  body('end_time')
+    .optional()
+    .isISO8601()
+    .withMessage('end_time must be a valid ISO datetime'),
+  body('location')
+    .optional()
+    .isString()
+    .withMessage('Location must be a string'),
+  body('status')
+    .optional()
+    .isIn(['scheduled', 'cancelled', 'completed'])
+    .withMessage('Invalid status'),
+
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
   validateForgotPassword,
   validateResetPassword,
+  validateCreateClass,
+  validateUpdateClass,
 };

@@ -6,6 +6,7 @@ const { handleRefreshToken } = require('./middleware/refreshToken.middleware');
 const authRoutes = require('./routes/auth.routes');
 const memberRoutes = require('./routes/member.routes');
 const adminRoutes = require('./routes/admin.routes');
+const classRoutes = require('./routes/class.routes');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(handleRefreshToken);
 // public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
+app.use('/api/classes', classRoutes);
 
 // admin routes
 app.use('/api/admin', adminRoutes);

@@ -9,6 +9,7 @@ const swaggerUi = require('swagger-ui-express');
 // Import modular documentation
 const { authPaths, authSchemas } = require('../docs/auth.docs');
 const { adminPaths, adminSchemas } = require('../docs/admin.docs');
+const { classPaths, classSchemas } = require('../docs/class.docs');
 
 const swaggerSpec = {
   openapi: '3.0.0',
@@ -35,6 +36,7 @@ const swaggerSpec = {
     // Merge all modular paths here
     ...authPaths,
     ...adminPaths,
+    ...classPaths,
   },
   components: {
     securitySchemes: {
@@ -49,6 +51,7 @@ const swaggerSpec = {
       // Merge all modular schemas here
       ...authSchemas,
       ...adminSchemas,
+      ...classSchemas,
     },
   },
 };

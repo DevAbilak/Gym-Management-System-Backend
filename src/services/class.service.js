@@ -1,5 +1,21 @@
 const knex = require('../db/db');
 
+// HELPER FUNCTION: Validate time ordering
+const validateClassTimes = (startTime, endTime) => {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+
+  if (isNaN(start.getTime())) {
+    throw new Error('Invalid start_time format');
+  }
+  if (isNaN(end.getTime())) {
+    throw new Error('Invalid end_time format');
+  }
+  if (start >= end) {
+    throw new Error('end_time must be after start_time');
+  }
+};
+
 const createClass = async (payload) => {
   const {
     trainer_id,
@@ -12,6 +28,8 @@ const createClass = async (payload) => {
     end_time,
     location,
   } = payload;
+
+  validateClassTimes(start_time, end_time);
 
   const result = await knex.raw(
     `
@@ -81,7 +99,7 @@ const listClasses = async (filters = {}) => {
       c.end_time,
       c.location,
       c.status,
-      u.id AS trainer_user_id
+      u.id AS trainer_user_id,
       u.first_name || ' ' || u.last_name AS trainer_name,
       u.email AS trainer_email
     FROM classes c
@@ -102,7 +120,7 @@ const getClassById = async (id) => {
     `
     SELECT 
       c.*,
-      u.first_name || ' ' || u.last_name AS trainer_name
+      u.first_name || ' ' || u.last_name AS trainer_name,
       (c.capacity - c.current_bookings) AS available_spots
       FROM classes c
       JOIN trainers tr ON c.trainer_id = tr.id
@@ -128,6 +146,28 @@ const updateClass = async (id, updates) => {
   ];
   const setClauses = [];
   const Values = [];
+
+  // Validate time ordering if both times are provided in the update
+  if (updates.start_time && updates.end_time) {
+    validateClassTimes(updates.start_time, updates.end_time);
+  }
+
+  // If only one time is provided
+  if (updates.start_time && !updates.end_time) {
+    const current = await getClassById(id);
+    if (current) {
+      const endTime = updates.end_time || current.end_time;
+      validateClassTimes(updates.start_time, endTime);
+    }
+  }
+
+  if (!updates.start_time && updates.end_time) {
+    const current = await getClassById(id);
+    if (current) {
+      const startTime = updates.start_time || current.end_time;
+      validateClassTimes(startTime, updates.end_time);
+    }
+  }
 
   allowedFields.forEach((field) => {
     if (updates[field] !== undefined) {

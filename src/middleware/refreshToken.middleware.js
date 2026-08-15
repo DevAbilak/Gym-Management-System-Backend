@@ -14,7 +14,6 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const handleRefreshToken = async (req, res, next) => {
   try {
     const refreshToken = req.headers['x-refresh-token'];
-    console.log(refreshToken);
 
     // if no refresh token provided, just continue
     if (!refreshToken) {
