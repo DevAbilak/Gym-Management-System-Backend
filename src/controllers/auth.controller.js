@@ -3,12 +3,12 @@ const authService = require('../services/auth.service');
 // REGISTER
 const register = async (req, res, next) => {
   try {
+    const payload = req.body;
+
     const result = await authService.registerUser(payload);
+
     res.status(201).json(result);
   } catch (error) {
-    if (error.message === 'Email already registered') {
-      return res.status(400).json({ error: error.message });
-    }
     next(error);
   }
 };
