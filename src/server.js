@@ -2,7 +2,8 @@ require('dotenv').config();
 require('./config/env');
 const app = require('./app');
 const logger = require('./config/logger');
-const { testRedisConnection } = require('./config/redis');
+const { testRedisConnection, redisClient } = require('./config/redis');
+const knex = require('./db/db');
 
 const PORT = process.env.PORT || 3000;
 
@@ -23,7 +24,25 @@ const startServer = async () => {
     logger.info('SIGTERM received: closing HTTP server...');
     server.close(() => {
       logger.info('HTTP server closed.');
-      process.exit(0);
+
+      // close database and redis connection
+      knex
+        .destroy()
+        .then(() => {
+          logger.info('PostgreSQL connection pool closed.');
+          return redisClient.quit();
+        })
+        .then(() => {
+          logger.info('Redis connection closed.');
+          process.exit(0);
+        })
+        .catch((err) => {
+          logger.error(
+            { error: err.message },
+            'Error during graceful shutdown',
+          );
+          process.exit(1);
+        });
     });
   });
 };
