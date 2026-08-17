@@ -1,13 +1,13 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const compression = require("compression");
-const { setupSwagger } = require("./config/swagger");
-const { handleRefreshToken } = require("./middleware/refreshToken.middleware");
-const authRoutes = require("./routes/auth.routes");
-const memberRoutes = require("./routes/member.routes");
-const adminRoutes = require("./routes/admin.routes");
-const classRoutes = require("./routes/class.routes");
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const { setupSwagger } = require('./config/swagger');
+const { handleRefreshToken } = require('./middleware/refreshToken.middleware');
+const authRoutes = require('./routes/auth.routes');
+const memberRoutes = require('./routes/member.routes');
+const adminRoutes = require('./routes/admin.routes');
+const classRoutes = require('./routes/class.routes');
 
 const app = express();
 
@@ -18,17 +18,17 @@ app.use(express.json());
 app.use(handleRefreshToken);
 
 // public routes
-app.use("/api/auth", authRoutes);
-app.use("/api/members", memberRoutes);
-app.use("/api/classes", classRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/members', memberRoutes);
+app.use('/api/classes', classRoutes);
 
 // admin routes
-app.use("/api/admin", adminRoutes);
+app.use('/api/admin', adminRoutes);
 
 // health check
-app.get("/health", (req, res) => {
+app.get('/health', (req, res) => {
   res.status(200).json({
-    status: "ok",
+    status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });
@@ -38,15 +38,15 @@ app.get("/health", (req, res) => {
 setupSwagger(app);
 
 // 404 Handler
-app.use("/*splat", (req, res) => {
-  res.status(404).json({ error: "Route not found" });
+app.use('/*splat', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
 // Global Error Handler
 app.use((err, req, res, _next) => {
-  console.error("Global Error:", err.stack);
+  console.error('Global Error:', err.stack);
   res.status(err.status || 500).json({
-    error: err.message || "Internal Server Error",
+    error: err.message || 'Internal Server Error',
   });
 });
 
