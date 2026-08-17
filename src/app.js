@@ -9,6 +9,8 @@ const memberRoutes = require('./routes/member.routes');
 const adminRoutes = require('./routes/admin.routes');
 const classRoutes = require('./routes/class.routes');
 const logger = require('./config/logger');
+const knex = require('./db/db');
+const { redisClient } = require('./config/redis');
 
 const app = express();
 
@@ -27,12 +29,35 @@ app.use('/api/classes', classRoutes);
 app.use('/api/admin', adminRoutes);
 
 // health check
-app.get('/health', (req, res) => {
-  res.status(200).json({
+app.get('/health', async (req, res) => {
+  const status = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-  });
+    dependencies: {},
+  };
+
+  // check PostgreSQL
+  try {
+    await knex.raw('SELECT 1');
+    status.dependencies.postgres = 'connected';
+  } catch (error) {
+    status.dependencies.postgres = `error: ${error.message}`;
+    status.status = 'degraded';
+  }
+
+  // check redis
+  try {
+    await redisClient.ping();
+    status.dependencies.redis = 'connected';
+  } catch (error) {
+    status.dependencies.redis = `error:${error.message}`;
+    status.status = 'degraded';
+  }
+
+  const httpStatus = status.status === 'ok' ? 200 : 503;
+
+  res.status(httpStatus).json(status);
 });
 
 // SWAGGER DOCS
