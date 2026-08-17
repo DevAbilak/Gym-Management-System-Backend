@@ -1,9 +1,10 @@
 const Redis = require('ioredis');
+const logger = require('./logger');
 
 const redisUrl = process.env.REDIS_URL;
 
 if (!redisUrl) {
-  console.error('REDIS_URL is not defined in .env');
+  logger.error('REDIS_URL is not defined in .env');
   process.exit(1);
 }
 
@@ -12,7 +13,7 @@ const redisClient = new Redis(redisUrl, {
   enableReadyCheck: true,
   retryStrategy: (times) => {
     if (times > 5) {
-      console.error(`Redis retry exhausted after ${times} attempts`);
+      logger.error(`Redis retry exhausted after ${times} attempts`);
       return null;
     }
     return Math.min(times * 200, 3000);
@@ -23,20 +24,20 @@ const redisClient = new Redis(redisUrl, {
 });
 
 redisClient.on('connect', () => {
-  console.log('Upstash Redis connected successfully');
+  logger.info('Upstash Redis connected successfully');
 });
 
 redisClient.on('error', (err) => {
-  console.error('Upstash Redis error:', err.message);
+  logger.error('Upstash Redis error:', err.message);
 });
 
 const testRedisConnection = async () => {
   try {
     const pong = await redisClient.ping();
-    console.log(`Upstash Redis ping: ${pong}`);
+    logger.info(`Upstash Redis ping: ${pong}`);
     return true;
   } catch (error) {
-    console.error('Redis ping failed:', error.message);
+    logger.error('Redis ping failed:', error.message);
     return false;
   }
 };

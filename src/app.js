@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth.routes');
 const memberRoutes = require('./routes/member.routes');
 const adminRoutes = require('./routes/admin.routes');
 const classRoutes = require('./routes/class.routes');
+const logger = require('./config/logger');
 
 const app = express();
 
@@ -44,7 +45,7 @@ app.use('/*splat', (req, res) => {
 
 // Global Error Handler
 app.use((err, req, res, _next) => {
-  console.error('Global Error:', err.stack);
+  logger.error('Global Error:', err.stack);
   res.status(err.status || 500).json({
     error: err.message || 'Internal Server Error',
   });

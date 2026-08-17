@@ -1,3 +1,4 @@
+const logger = require('../config/logger');
 const authService = require('../services/auth.service');
 
 // REGISTER
@@ -82,7 +83,7 @@ const forgotPassword = async (req, res, _next) => {
     const result = await authService.forgotPassword(email);
     res.status(200).json(result);
   } catch (error) {
-    console.error('Forgot password error:', error.message);
+    logger.error('Forgot password error:', error.message);
     // Don't leak internal errors to the client
     res.status(500).json({
       error: 'Unable to send reset email. Please try again later.',

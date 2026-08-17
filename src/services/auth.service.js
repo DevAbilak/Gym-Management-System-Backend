@@ -9,6 +9,7 @@ const {
 } = require('../utils/emailTemplates');
 const { sendEmail } = require('./email.service');
 const { generateUniqueMemberId } = require('./idGenerator.service');
+const logger = require('../config/logger');
 
 const SALT_ROUNDS = 12;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -301,7 +302,7 @@ const forgotPassword = async (email) => {
   try {
     sendEmail(user.email, 'Reset Your Password - FitAddis', html);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     throw new Error('Failed to send reset email. Please try again later.');
   }
 

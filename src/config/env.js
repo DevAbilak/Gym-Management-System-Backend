@@ -12,4 +12,8 @@ module.exports = cleanEnv(process.env, {
   BREVO_API_KEY: str({ desc: 'Brevo (Sendinblue) API key for emails' }),
   EMAIL_FROM: str({ desc: 'Sender email address for system emails' }),
   CLIENT_URL: url({ desc: 'Frontend application URL for reset links' }),
+  LOG_LEVEL: str({
+    choices: ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'],
+    default: 'info',
+  }),
 });

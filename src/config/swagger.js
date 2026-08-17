@@ -5,6 +5,7 @@
  * Imports modular documentation files from src/docs/
  */
 const swaggerUi = require('swagger-ui-express');
+const logger = require('./logger');
 
 // Import modular documentation
 const { authPaths, authSchemas } = require('../docs/auth.docs');
@@ -74,7 +75,7 @@ const setupSwagger = (app) => {
     res.send(swaggerSpec);
   });
 
-  console.log('Swagger docs available at: http://localhost:3000/api-docs');
+  logger.info('Swagger docs available at: http://localhost:3000/api-docs');
 };
 
 module.exports = { setupSwagger, swaggerSpec };
