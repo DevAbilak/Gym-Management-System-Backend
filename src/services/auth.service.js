@@ -9,7 +9,6 @@ const {
 } = require('../utils/emailTemplates');
 const { sendEmail } = require('./email.service');
 const { generateUniqueMemberId } = require('./idGenerator.service');
-const logger = require('../config/logger');
 
 const SALT_ROUNDS = 12;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -277,7 +276,7 @@ const logoutUser = async (userId) => {
 };
 
 // FORGOT PASSWORD
-const forgotPassword = async (email) => {
+const forgotPassword = async (email, log) => {
   const result = await knex.raw(
     'SELECT id,email,first_name FROM users WHERE email = ?',
     [email],
@@ -302,7 +301,7 @@ const forgotPassword = async (email) => {
   try {
     sendEmail(user.email, 'Reset Your Password - FitAddis', html);
   } catch (error) {
-    logger.error(error);
+    log.error(error);
     throw new Error('Failed to send reset email. Please try again later.');
   }
 

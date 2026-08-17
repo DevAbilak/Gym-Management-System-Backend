@@ -1,22 +1,22 @@
-const jwt = require("jsonwebtoken");
-const { sendError, ErrorCodes } = require("../utils/response");
-const logger = require("../config/logger");
+const jwt = require('jsonwebtoken');
+const { sendError, ErrorCodes } = require('../utils/response');
+const logger = require('../config/logger');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return sendError(
       res,
-      "Authorization token required. Please log in first.",
+      'Authorization token required. Please log in first.',
       ErrorCodes.UNAUTHORIZED,
       401,
     );
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.split(' ')[1];
 
   try {
     // verify token
@@ -30,39 +30,39 @@ const authenticate = (req, res, next) => {
 
     logger.debug(
       { userId: req.user.id, role: req.user.role },
-      "User authenticated successfully",
+      'User authenticated successfully',
     );
     next();
   } catch (error) {
     // Ensuring headers are exposed even on error responses
     res.setHeader(
-      "Access-Control-Expose-Headers",
-      (res.getHeader("Access-Control-Expose-Headers") || "") +
-        ", x-access-token, x-refresh-status",
+      'Access-Control-Expose-Headers',
+      (res.getHeader('Access-Control-Expose-Headers') || '') +
+        ', x-access-token, x-refresh-status',
     );
-    if (error.name === "TokenExpiredError") {
-      logger.warn({ ip: req.ip }, "Token expired");
+    if (error.name === 'TokenExpiredError') {
+      logger.warn({ ip: req.ip }, 'Token expired');
       return sendError(
         res,
-        "Token expired. Please refresh your token or log in again.",
+        'Token expired. Please refresh your token or log in again.',
         ErrorCodes.TOKEN_EXPIRED,
         401,
       );
     }
-    if (error.name === "JsonWebTokenError") {
-      logger.warn({ ip: req.ip, error: error.message }, "Invalid token");
+    if (error.name === 'JsonWebTokenError') {
+      logger.warn({ ip: req.ip, error: error.message }, 'Invalid token');
       return sendError(
         res,
-        "Invalid token. Please log in again.",
+        'Invalid token. Please log in again.',
         ErrorCodes.TOKEN_INVALID,
         401,
       );
     }
     // Unknown error
-    logger.error({ ip: req.ip, error: error.message }, "Authentication error");
+    logger.error({ ip: req.ip, error: error.message }, 'Authentication error');
     return sendError(
       res,
-      "Authentication failed. Please log in again.",
+      'Authentication failed. Please log in again.',
       ErrorCodes.UNAUTHORIZED,
       401,
     );
@@ -75,11 +75,11 @@ const authorize = (...allowedRoles) => {
     if (!req.user) {
       logger.warn(
         { ip: req.ip, path: req.path },
-        "Authorization attempted without authentication",
+        'Authorization attempted without authentication',
       );
       return sendError(
         res,
-        "Authentication required. Please log in first.",
+        'Authentication required. Please log in first.',
         ErrorCodes.UNAUTHORIZED,
         401,
       );
@@ -93,11 +93,11 @@ const authorize = (...allowedRoles) => {
           requiredRoles: allowedRoles,
           path: req.path,
         },
-        "Access denied: insufficient permissions",
+        'Access denied: insufficient permissions',
       );
       return sendError(
         res,
-        `Access denied. Required roles: ${allowedRoles.join(", ")}. Your role: ${req.user.role}`,
+        `Access denied. Required roles: ${allowedRoles.join(', ')}. Your role: ${req.user.role}`,
         ErrorCodes.FORBIDDEN,
         403,
       );
@@ -105,18 +105,18 @@ const authorize = (...allowedRoles) => {
 
     logger.debug(
       { userId: req.user.id, role: req.user.role, path: req.path },
-      "Authorization granted",
+      'Authorization granted',
     );
     next();
   };
 };
 
-const requireOwnership = (paramName = "id") => {
+const requireOwnership = (paramName = 'id') => {
   return (req, res, next) => {
     if (!req.user) {
       return sendError(
         res,
-        "Authentication required",
+        'Authentication required',
         ErrorCodes.UNAUTHORIZED,
         401,
       );
@@ -131,7 +131,7 @@ const requireOwnership = (paramName = "id") => {
     }
 
     // Admin and receptionist can access any user's data
-    if (req.user.role === "admin" || req.user.role === "reception") {
+    if (req.user.role === 'admin' || req.user.role === 'reception') {
       return next();
     }
 
@@ -144,11 +144,11 @@ const requireOwnership = (paramName = "id") => {
           path: req.path,
           role: req.user.role,
         },
-        "Ownership check failed: user tried to access another user's resource",
+        'Ownership check failed: user tried to access another user\'s resource',
       );
       return sendError(
         res,
-        "Access denied. You can only access your own resources.",
+        'Access denied. You can only access your own resources.',
         ErrorCodes.FORBIDDEN,
         403,
       );
@@ -156,7 +156,7 @@ const requireOwnership = (paramName = "id") => {
 
     logger.debug(
       { userId: req.user.id, targetUserId, path: req.path },
-      "Ownership check passed",
+      'Ownership check passed',
     );
 
     next();

@@ -1,10 +1,10 @@
-const memberService = require("../services/member.service");
-const { sendSuccess, ErrorCodes, sendError } = require("../utils/response");
+const memberService = require('../services/member.service');
+const { sendSuccess, ErrorCodes, sendError } = require('../utils/response');
 
 const getAllMembers = async (req, res, next) => {
   try {
     const result = await memberService.getAllMembers();
-    return sendSuccess(res, result, "Members retrieved successfully", 200);
+    return sendSuccess(res, result, 'Members retrieved successfully', 200);
   } catch (error) {
     next(error);
   }
@@ -16,9 +16,9 @@ const getMemberById = async (req, res, next) => {
     const result = await memberService.getMemberById(id);
 
     if (!result) {
-      return sendError(res, "Member not found", ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
     }
-    return sendSuccess(res, result, "Member retrieved successfully", 200);
+    return sendSuccess(res, result, 'Member retrieved successfully', 200);
   } catch (error) {
     next(error);
   }
@@ -32,12 +32,12 @@ const getMemberByUserId = async (req, res, next) => {
     if (!result) {
       return sendError(
         res,
-        "Member not found for this user",
+        'Member not found for this user',
         ErrorCodes.NOT_FOUND,
         404,
       );
     }
-    return sendSuccess(res, result, "Member retrieved successfully", 200);
+    return sendSuccess(res, result, 'Member retrieved successfully', 200);
   } catch (error) {
     next(error);
   }
@@ -49,7 +49,7 @@ const getMemberByUniqueId = async (req, res, next) => {
     if (!uniqueMemberId) {
       return sendError(
         res,
-        "Unique member ID is required",
+        'Unique member ID is required',
         ErrorCodes.VALIDATION_ERROR,
         400,
       );
@@ -58,9 +58,9 @@ const getMemberByUniqueId = async (req, res, next) => {
     const result = await memberService.getMemberByUniqueId(uniqueMemberId);
 
     if (!result) {
-      return sendError(res, "Member not found", ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
     }
-    return sendSuccess(res, result, "Member retrieved successfully", 200);
+    return sendSuccess(res, result, 'Member retrieved successfully', 200);
   } catch (error) {
     next(error);
   }
@@ -80,10 +80,10 @@ const updateMember = async (req, res, next) => {
     const result = await memberService.updateMember(id, updates);
 
     if (!result) {
-      return sendError(res, "Member not found", ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
     }
 
-    return sendSuccess(res, result, "Member updated successfully", 200);
+    return sendSuccess(res, result, 'Member updated successfully', 200);
   } catch (error) {
     next(error);
   }

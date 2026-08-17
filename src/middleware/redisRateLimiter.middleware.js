@@ -1,10 +1,10 @@
-const { redisClient } = require("../config/redis");
-const { sendError, ErrorCodes } = require("../utils/response");
-const logger = require("../config/logger");
+const { redisClient } = require('../config/redis');
+const { sendError, ErrorCodes } = require('../utils/response');
+const logger = require('../config/logger');
 
 const createRateLimiter = (windowMs, max, keyPrefix, keyGenerator = null) => {
   const defaultKeyGenerator = (req) => {
-    const ip = req.ip || req.connection?.remoteAddress || "unknown";
+    const ip = req.ip || req.connection?.remoteAddress || 'unknown';
     return `${keyPrefix}:${ip}:${req.route?.path || req.path}`;
   };
 
@@ -35,14 +35,14 @@ const createRateLimiter = (windowMs, max, keyPrefix, keyGenerator = null) => {
             max,
             key: redisKey,
           },
-          "Rate limit exceeded",
+          'Rate limit exceeded',
         );
 
         // set rate limit headers
-        res.setHeader("RateLimit-Limit", max);
-        res.setHeader("RateLimit-Remaining", 0);
+        res.setHeader('RateLimit-Limit', max);
+        res.setHeader('RateLimit-Remaining', 0);
         res.setHeader(
-          "RateLimit-Reset",
+          'RateLimit-Reset',
           Math.ceil(Date.now() / 1000) + remainingTime,
         );
 
@@ -54,10 +54,10 @@ const createRateLimiter = (windowMs, max, keyPrefix, keyGenerator = null) => {
         );
       }
 
-      res.setHeader("RateLimit-Limit", max);
-      res.setHeader("RateLimit-Remaining", max - current);
+      res.setHeader('RateLimit-Limit', max);
+      res.setHeader('RateLimit-Remaining', max - current);
       res.setHeader(
-        "RateLimit-Reset",
+        'RateLimit-Reset',
         Math.ceil(Date.now() / 1000) + remainingTime,
       );
 
@@ -65,7 +65,7 @@ const createRateLimiter = (windowMs, max, keyPrefix, keyGenerator = null) => {
     } catch (error) {
       logger.error(
         { error: error.message },
-        "Rate limiter Redis error — allowing request",
+        'Rate limiter Redis error — allowing request',
       );
       next();
     }
@@ -76,12 +76,12 @@ const createRateLimiter = (windowMs, max, keyPrefix, keyGenerator = null) => {
 const authLimiter = createRateLimiter(
   15 * 60 * 1000, //15minutes
   20,
-  "auth",
+  'auth',
   // custom key generator => ip + email (if available)
   (req) => {
-    const ip = req.ip || "unknown";
+    const ip = req.ip || 'unknown';
     const email =
-      req.body?.email || req.query?.email || req.user?.email || "unknown";
+      req.body?.email || req.query?.email || req.user?.email || 'unknown';
     return `auth:${ip}:${email}`;
   },
 );
@@ -90,10 +90,10 @@ const authLimiter = createRateLimiter(
 const bookingLimiter = createRateLimiter(
   60 * 60 * 1000, //1hour
   10,
-  "booking",
+  'booking',
   (req) => {
-    const userId = req.user?.id || "anonymous";
-    const ip = req.ip || "unknown";
+    const userId = req.user?.id || 'anonymous';
+    const ip = req.ip || 'unknown';
     return `booking:${userId}:${ip}`;
   },
 );
@@ -102,18 +102,18 @@ const bookingLimiter = createRateLimiter(
 const apiLimiter = createRateLimiter(
   60 * 1000, // 1 minute
   100,
-  "api",
+  'api',
 );
 
 // sensitive routes limiter (5 requests per day)
 const sensitiveRoutesLimiter = createRateLimiter(
   24 * 60 * 60 * 1000, // 1 day
   5,
-  "sensitive",
+  'sensitive',
   (req) => {
-    const ip = req.ip || "unknown";
+    const ip = req.ip || 'unknown';
     const email =
-      req.body?.email || req.query?.email || req.user?.email || "unknown";
+      req.body?.email || req.query?.email || req.user?.email || 'unknown';
     return `auth:${ip}:${email}`;
   },
 );

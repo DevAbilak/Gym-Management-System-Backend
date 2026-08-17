@@ -1,19 +1,19 @@
-const logger = require("../config/logger");
-const authService = require("../services/auth.service");
-const { ErrorCodes, sendError, sendSuccess } = require("../utils/response");
+const authService = require('../services/auth.service');
+const { ErrorCodes, sendError, sendSuccess } = require('../utils/response');
 
 // REGISTER
 const register = async (req, res, next) => {
   try {
-    const result = await authService.registerUser(payload);
+    const result = await authService.registerUser(req.body);
     return sendSuccess(
       res,
       result,
-      result.message || "Registration successful",
+      result.message || 'Registration successful',
       201,
     );
   } catch (error) {
-    if (error.message === "Email already registered") {
+    req.log.error({ error: error.message }, 'Registration error');
+    if (error.message === 'Email already registered') {
       return sendError(res, error.message, ErrorCodes.CONFLICT, 409);
     }
     next(error);
@@ -26,16 +26,17 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
     const result = await authService.loginUser(email, password);
 
-    return sendSuccess(res, result, "Login successful", 200);
+    return sendSuccess(res, result, 'Login successful', 200);
   } catch (error) {
+    req.log.error({ error: error.message }, 'login error');
     switch (error.message) {
-      case "User does not exist.Please register":
+      case 'User does not exist.Please register':
         return sendError(res, error.message, ErrorCodes.UNAUTHORIZED, 401);
         break;
-      case "Account is deactivated":
+      case 'Account is deactivated':
         return sendError(res, error.message, ErrorCodes.UNAUTHORIZED, 401);
         break;
-      case "Invalid password":
+      case 'Invalid password':
         return sendError(res, error.message, ErrorCodes.UNAUTHORIZED, 401);
         break;
       default:
@@ -52,7 +53,7 @@ const refreshToken = async (req, res, next) => {
     if (!refreshToken) {
       return sendError(
         res,
-        "Refresh token required",
+        'Refresh token required',
         ErrorCodes.VALIDATION_ERROR,
         400,
       );
@@ -60,9 +61,10 @@ const refreshToken = async (req, res, next) => {
 
     const result = await authService.refreshAccessToken(refreshToken);
 
-    return sendSuccess(res, result, "Token refreshed successfully", 200);
+    return sendSuccess(res, result, 'Token refreshed successfully', 200);
   } catch (error) {
-    if (error.message === "Invalid refresh token") {
+    req.log.error({ error: error.message }, 'token refreshing error');
+    if (error.message === 'Invalid refresh token') {
       return sendError(
         res,
         error.message,
@@ -70,7 +72,7 @@ const refreshToken = async (req, res, next) => {
         401,
       );
     }
-    if (error.message === "User not found") {
+    if (error.message === 'User not found') {
       return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
     }
     next(error);
@@ -87,10 +89,11 @@ const logout = async (req, res, next) => {
     return sendSuccess(
       res,
       result,
-      result.message || "Logged out successfully",
+      result.message || 'Logged out successfully',
       200,
     );
   } catch (error) {
+    req.log.error({ error: error.message }, 'logout error');
     next(error);
   }
 };
@@ -99,19 +102,19 @@ const logout = async (req, res, next) => {
 const forgotPassword = async (req, res, _next) => {
   try {
     const { email } = req.body;
-    const result = await authService.forgotPassword(email);
+    const result = await authService.forgotPassword(email, req.log);
     return sendSuccess(
       res,
       result,
-      result.message || "Reset link sent if email exists",
+      result.message || 'Reset link sent if email exists',
       200,
     );
   } catch (error) {
-    logger.error("Forgot password error:", error.message);
+    req.log.error('Forgot password error:', error.message);
     // Don't leak internal errors to the client
     return sendError(
       res,
-      "Unable to send reset email. Please try again later.",
+      'Unable to send reset email. Please try again later.',
       ErrorCodes.INTERNAL_ERROR,
       500,
     );
@@ -127,14 +130,15 @@ const resetPassword = async (req, res, next) => {
     return sendSuccess(
       res,
       result,
-      result.message || "Password updated successfully",
+      result.message || 'Password updated successfully',
       200,
     );
   } catch (error) {
-    if (error.message === "Invalid or expired reset token") {
+    req.log.error({ error: error.message }, 'Reset password error');
+    if (error.message === 'Invalid or expired reset token') {
       return sendError(res, error.message, ErrorCodes.VALIDATION_ERROR, 400);
     }
-    if (error.message === "User does not exist.") {
+    if (error.message === 'User does not exist.') {
       return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
     }
 
