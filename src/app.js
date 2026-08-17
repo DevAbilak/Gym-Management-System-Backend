@@ -39,6 +39,12 @@ app.use('/api/classes', classRoutes);
 // admin routes
 app.use('/api/admin', adminRoutes);
 
+// Versioned routes
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/members', memberRoutes);
+app.use('/api/v1/classes', classRoutes);
+app.use('/api/v1/admin', adminRoutes);
+
 // health check
 app.get('/health', async (req, res) => {
   const status = {

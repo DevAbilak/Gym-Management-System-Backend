@@ -25,11 +25,11 @@ const swaggerSpec = {
   },
   servers: [
     {
-      url: 'https://gym-management-system-backend-xb5m.onrender.com/api',
+      url: 'https://gym-management-system-backend-xb5m.onrender.com/api/v1',
       description: 'Production Server',
     },
     {
-      url: 'http://localhost:3000/api',
+      url: 'http://localhost:3000/api/v1',
       description: 'Development Server',
     },
   ],
