@@ -11,6 +11,7 @@ const classRoutes = require('./routes/class.routes');
 const logger = require('./config/logger');
 const knex = require('./db/db');
 const { redisClient } = require('./config/redis');
+const { sendSuccess, sendError, ErrorCodes } = require('./utils/response');
 
 const app = express();
 
@@ -57,7 +58,7 @@ app.get('/health', async (req, res) => {
 
   const httpStatus = status.status === 'ok' ? 200 : 503;
 
-  res.status(httpStatus).json(status);
+  sendSuccess(res, status, 'health status fetched', httpStatus);
 });
 
 // SWAGGER DOCS
@@ -65,15 +66,52 @@ setupSwagger(app);
 
 // 404 Handler
 app.use('/*splat', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  sendError(res, 'Not found', ErrorCodes.NOT_FOUND, 404);
 });
 
 // Global Error Handler
 app.use((err, req, res, _next) => {
-  logger.error('Global Error:', err.stack);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error',
-  });
+  logger.error(
+    { error: err.stack, path: req.path, method: req.method },
+    'Global error caught',
+  );
+
+  // Handle validation errors from express-validator
+  if (err.array && err.array().length > 0) {
+    return sendError(
+      res,
+      err
+        .array()
+        .map((e) => `${e.param}: ${e.msg}`)
+        .join(', '),
+      ErrorCodes.VALIDATION_ERROR,
+      400,
+    );
+  }
+
+  // Handle JWT errors
+  if (err.name === 'TokenExpiredError') {
+    return sendError(res, 'Token expired', ErrorCodes.TOKEN_EXPIRED, 401);
+  }
+  if (err.name === 'JsonWebTokenError') {
+    return sendError(res, 'Invalid token', ErrorCodes.TOKEN_INVALID, 401);
+  }
+
+  // Handle database unique violation
+  if (err.code === '23505') {
+    return sendError(
+      res,
+      'Duplicate entry. Resource already exists.',
+      ErrorCodes.CONFLICT,
+      409,
+    );
+  }
+  // Default
+  const status = err.status || 500;
+  const code = err.code || ErrorCodes.INTERNAL_ERROR;
+  const message = status === 500 ? 'Internal Server Error' : err.message;
+
+  sendError(res, message, code, status);
 });
 
 module.exports = app;
