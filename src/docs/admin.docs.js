@@ -1,4 +1,5 @@
 const adminPaths = {
+  // --------- AUTH MANAGEMENT -------------
   '/admin/register': {
     post: {
       summary: 'Admin: Register any user',
@@ -40,6 +41,166 @@ const adminPaths = {
         401: {
           description: 'Unauthenticated (missing or invalid token)',
         },
+      },
+    },
+  },
+
+  // ---------- MEMBER MANAGEMENT ----------
+  '/admin/members': {
+    get: {
+      summary: 'Admin: List all members',
+      description:
+        'Returns a paginated list of all members with optional filters.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'page',
+          in: 'query',
+          schema: { type: 'integer', default: 1 },
+          description: 'Page number',
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', default: 20, maximum: 100 },
+          description: 'Items per page',
+        },
+        {
+          name: 'search',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Search by name, email, or unique member ID',
+        },
+        {
+          name: 'status',
+          in: 'query',
+          schema: { type: 'string', enum: ['active', 'inactive'] },
+          description: 'Filter by member status (active/inactive)',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Members retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      data: {
+                        type: 'array',
+                        items: {
+                          $ref: '#/components/schemas/MemberProfileResponse',
+                        },
+                      },
+                      pagination: {
+                        type: 'object',
+                        properties: {
+                          page: { type: 'integer' },
+                          limit: { type: 'integer' },
+                          total: { type: 'integer' },
+                          totalPages: { type: 'integer' },
+                        },
+                      },
+                    },
+                  },
+                  message: {
+                    type: 'string',
+                    example: 'Members retrieved successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+      },
+    },
+  },
+
+  '/admin/members/{id}/deactivate': {
+    patch: {
+      summary: 'Admin: Deactivate a member',
+      description: 'Soft-deletes a member by deactivating their user account.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Member profile UUID',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Member deactivated successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/MemberProfileResponse' },
+                  message: {
+                    type: 'string',
+                    example: 'Member deactivated successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+        404: { description: 'Member not found' },
+      },
+    },
+  },
+
+  '/admin/members/{id}/reactivate': {
+    patch: {
+      summary: 'Admin: Reactivate a member',
+      description: 'Reactivates a previously deactivated member.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Member profile UUID',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Member reactivated successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/MemberProfileResponse' },
+                  message: {
+                    type: 'string',
+                    example: 'Member reactivated successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+        404: { description: 'Member not found' },
       },
     },
   },

@@ -2,15 +2,12 @@ const express = require('express');
 
 const checkinController = require('../controllers/checkin.controller');
 
-const {
-  authenticate,
-  authorize,
-} = require('../middleware/auth.middleware');
+const { authenticate, authorize } = require('../middleware/auth.middleware');
 
 const {
+  validateCheckInHistory,
   validateCheckInMember,
   validateOverrideCheckIn,
-  validateCheckInHistory,
 } = require('../middleware/validators.middleware');
 
 const router = express.Router();

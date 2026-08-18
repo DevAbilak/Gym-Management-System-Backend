@@ -196,6 +196,111 @@ const validateCreateClass = [
   handleValidationErrors,
 ];
 
+// update class validator
+const validateUpdateClass = [
+  param('id').isUUID().withMessage('Invalid class ID format'),
+  body('name').optional().isString().withMessage('Name must be a string'),
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('Description must be a string'),
+  body('category')
+    .optional()
+    .isIn(['yoga', 'pilates', 'hiit', 'spin', 'strength', 'dance', 'other'])
+    .withMessage('Invalid category'),
+  body('difficulty')
+    .optional()
+    .isIn(['beginner', 'intermediate', 'advanced'])
+    .withMessage('Invalid difficulty level'),
+  body('capacity')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Capacity must be at least 1'),
+  body('start_time')
+    .optional()
+    .isISO8601()
+    .withMessage('start_time must be a valid ISO datetime'),
+  body('end_time')
+    .optional()
+    .isISO8601()
+    .withMessage('end_time must be a valid ISO datetime'),
+  body('location')
+    .optional()
+    .isString()
+    .withMessage('Location must be a string'),
+  body('status')
+    .optional()
+    .isIn(['scheduled', 'cancelled', 'completed'])
+    .withMessage('Invalid status'),
+
+  handleValidationErrors,
+];
+
+// ----------------- MEMBER VALIDATORS ------------------
+// validate get member by id
+const validateGetMemberById = [
+  param('id').isUUID().withMessage('Invalid member ID format'),
+  handleValidationErrors,
+];
+
+// validate get member by user id
+const validateGetMemberByUserId = [
+  param('userId').isUUID().withMessage('Invalid user ID format'),
+  handleValidationErrors,
+];
+
+// validate get member by Unique Member ID (GYM-XXXX-X)
+const validateGetMemberByUniqueId = [
+  param('uniqueMemberId')
+    .notEmpty()
+    .withMessage('Unique member ID is required')
+    .matches(/^GYM-[A-Z0-9]{4}-[0-9]$/)
+    .withMessage(
+      'Unique member ID must follow the format: GYM-XXXX-X (e.g., GYM-A3F9-7)',
+    ),
+  handleValidationErrors,
+];
+
+// validate update member
+const validateUpdateMember = [
+  param('id').isUUID().withMessage('Invalid member ID format'),
+  body('date_of_birth')
+    .optional()
+    .isISO8601()
+    .withMessage('Date of birth must be a valid date (YYYY-MM-DD)'),
+  body('gender')
+    .optional()
+    .isIn(['male', 'female'])
+    .withMessage('Gender must be "male" or "female"'),
+  body('blood_type')
+    .optional()
+    .isIn(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
+    .withMessage('Invalid blood type'),
+  body('dietary_restrictions')
+    .optional()
+    .isString()
+    .withMessage('Dietary restrictions must be a string'),
+  body('fitness_goal')
+    .optional()
+    .isIn(['weight_loss', 'muscle_building', 'maintenance', 'general_fitness'])
+    .withMessage('Invalid fitness goal'),
+  body('emergency_contact_name')
+    .optional()
+    .isString()
+    .withMessage('Emergency contact name must be a string'),
+  body('emergency_contact_phone')
+    .optional()
+    .isString()
+    .withMessage('Emergency contact phone must be a string'),
+  handleValidationErrors,
+];
+
+// validate activate.deactivate member
+const validateDeactivateUser = [
+  param('id').isUUID().withMessage('Invalid user/member ID format'),
+  handleValidationErrors,
+];
+
 // ----------------- CHECK-IN VALIDATORS ------------------
 
 // Validate unique member ID
@@ -237,76 +342,25 @@ const validateCheckInHistory = [
   handleValidationErrors,
 ];
 
-// update class validator
-const validateUpdateClass = [
-  param('id').isUUID().withMessage('Invalid class ID format'),
-  body('name').optional().isString().withMessage('Name must be a string'),
-  body('description')
-    .optional()
-    .isString()
-    .withMessage('Description must be a string'),
-  body('category')
-    .optional()
-    .isIn(['yoga', 'pilates', 'hiit', 'spin', 'strength', 'dance', 'other'])
-    .withMessage('Invalid category'),
-  body('difficulty')
-    .optional()
-    .isIn(['beginner', 'intermediate', 'advanced'])
-    .withMessage('Invalid difficulty level'),
-  body('capacity')
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage('Capacity must be at least 1'),
-  body('start_time')
-    .optional()
-    .isISO8601()
-    .withMessage('start_time must be a valid ISO datetime'),
-  body('end_time')
-    .optional()
-    .isISO8601()
-    .withMessage('end_time must be a valid ISO datetime'),
-  body('location')
-    .optional()
-    .isString()
-    .withMessage('Location must be a string'),
-  body('status')
-    .optional()
-    .isIn(['scheduled', 'cancelled', 'completed'])
-    .withMessage('Invalid status'),
-
-  handleValidationErrors,
-];
-
 // ----------------- TRAINER VALIDATORS ------------------
 
 // Trainer schedule
 const validateTrainerSchedule = [
-  param('trainerId')
-    .isUUID()
-    .withMessage('trainerId must be a valid UUID'),
+  param('trainerId').isUUID().withMessage('trainerId must be a valid UUID'),
 
-  body('date')
-    .optional()
-    .isISO8601()
-    .withMessage('date must be a valid date'),
+  body('date').optional().isISO8601().withMessage('date must be a valid date'),
 
   handleValidationErrors,
 ];
-
 
 // Class roster
 const validateClassRoster = [
-  param('trainerId')
-    .isUUID()
-    .withMessage('trainerId must be a valid UUID'),
+  param('trainerId').isUUID().withMessage('trainerId must be a valid UUID'),
 
-  param('classId')
-    .isUUID()
-    .withMessage('classId must be a valid UUID'),
+  param('classId').isUUID().withMessage('classId must be a valid UUID'),
 
   handleValidationErrors,
 ];
-
 
 // Member health profile
 const validateMemberHealthProfile = [
@@ -317,12 +371,9 @@ const validateMemberHealthProfile = [
   handleValidationErrors,
 ];
 
-
 // Assign workout / meal plan
 const validateAssignPlan = [
-  param('trainerId')
-    .isUUID()
-    .withMessage('trainerId must be a valid UUID'),
+  param('trainerId').isUUID().withMessage('trainerId must be a valid UUID'),
 
   body('member_profile_id')
     .notEmpty()
@@ -340,14 +391,10 @@ const validateAssignPlan = [
     .isUUID()
     .withMessage('meal_plan_id must be a valid UUID'),
 
-  body('notes')
-    .optional()
-    .isString()
-    .withMessage('notes must be a string'),
+  body('notes').optional().isString().withMessage('notes must be a string'),
 
   handleValidationErrors,
 ];
-
 
 // Personal training attendance
 const validatePersonalTrainingAttendance = [
@@ -355,10 +402,7 @@ const validatePersonalTrainingAttendance = [
     .isUUID()
     .withMessage('memberProfileId must be a valid UUID'),
 
-  body('notes')
-    .optional()
-    .isString()
-    .withMessage('notes must be a string'),
+  body('notes').optional().isString().withMessage('notes must be a string'),
 
   handleValidationErrors,
 ];
@@ -368,8 +412,19 @@ module.exports = {
   validateLogin,
   validateForgotPassword,
   validateResetPassword,
+
+  validateGetMemberById,
+  validateGetMemberByUserId,
+  validateGetMemberByUniqueId,
+  validateUpdateMember,
+  validateDeactivateUser,
+
   validateCreateClass,
   validateUpdateClass,
+
+  validateCheckInHistory,
+  validateCheckInMember,
+  validateOverrideCheckIn,
 
   validateTrainerSchedule,
   validateClassRoster,
