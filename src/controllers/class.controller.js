@@ -1,4 +1,5 @@
 const classService = require('../services/class.service');
+const { sendError, ErrorCodes, sendSuccess } = require('../utils/response');
 
 const listClasses = async (req, res, next) => {
   try {
@@ -12,11 +13,15 @@ const listClasses = async (req, res, next) => {
       limit: limit ? parseInt(limit) : 20,
     });
 
-    res.status(200).json({
-      success: true,
-      count: classes.length,
-      data: classes,
-    });
+    return sendSuccess(
+      res,
+      {
+        count: classes.length,
+        data: classes,
+      },
+      'Classes retrieved successfully',
+      200,
+    );
   } catch (error) {
     next(error);
   }
@@ -29,16 +34,10 @@ const getClassById = async (req, res, next) => {
     const classData = await classService.getClassById(id);
 
     if (!classData) {
-      return res.status(404).json({
-        success: false,
-        error: 'Class not found',
-      });
+      return sendError(res, 'Class not found', ErrorCodes.NOT_FOUND, 404);
     }
 
-    res.status(200).json({
-      success: true,
-      data: classData,
-    });
+    return sendSuccess(res, classData, 'Class retrieved successfully', 200);
   } catch (error) {
     next(error);
   }
@@ -48,23 +47,13 @@ const createClass = async (req, res, next) => {
   try {
     const newClass = await classService.createClass(req.body);
 
-    res.status(201).json({
-      success: true,
-      data: newClass,
-      message: 'Class created successfully',
-    });
+    return sendSuccess(res, newClass, 'Class created successfully', 201);
   } catch (error) {
     if (error.message === 'end_time must be after start_time') {
-      return res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      return sendError(res, error.message, ErrorCodes.VALIDATION_ERROR, 400);
     }
     if (error.message.includes('Invalid')) {
-      return res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      return sendError(res, error.message, ErrorCodes.VALIDATION_ERROR, 400);
     }
     next(error);
   }
@@ -83,35 +72,19 @@ const updateClass = async (req, res, next) => {
     const updated = await classService.updateClass(id, updates);
 
     if (!updated) {
-      return res.status(404).json({
-        success: false,
-        error: 'Class not found',
-      });
+      return sendError(res, 'Class not found', ErrorCodes.NOT_FOUND, 404);
     }
 
-    res.status(200).json({
-      success: true,
-      data: updated,
-      message: 'Class updated successfully',
-    });
+    return sendSuccess(res, updated, 'Class updated successfully', 200);
   } catch (error) {
     if (error.message === 'No valid fields to update') {
-      return res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      return sendError(res, error.message, ErrorCodes.VALIDATION_ERROR, 400);
     }
     if (error.message === 'end_time must be after start_time') {
-      return res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      return sendError(res, error.message, ErrorCodes.VALIDATION_ERROR, 400);
     }
     if (error.message.includes('Invalid')) {
-      return res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      return sendError(res, error.message, ErrorCodes.VALIDATION_ERROR, 400);
     }
 
     next(error);

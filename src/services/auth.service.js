@@ -276,7 +276,7 @@ const logoutUser = async (userId) => {
 };
 
 // FORGOT PASSWORD
-const forgotPassword = async (email) => {
+const forgotPassword = async (email, log) => {
   const result = await knex.raw(
     'SELECT id,email,first_name FROM users WHERE email = ?',
     [email],
@@ -301,7 +301,7 @@ const forgotPassword = async (email) => {
   try {
     sendEmail(user.email, 'Reset Your Password - FitAddis', html);
   } catch (error) {
-    console.error(error);
+    log.error(error);
     throw new Error('Failed to send reset email. Please try again later.');
   }
 

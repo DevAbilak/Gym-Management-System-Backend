@@ -1,16 +1,20 @@
 const { body, validationResult, param } = require('express-validator');
+const { sendError, ErrorCodes } = require('../utils/response');
 
 // Helper: handle validation errors
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({
-      error: 'Validation failed',
-      details: errors.array().map((err) => ({
+    return sendError(
+      res,
+      'Validation failed',
+      ErrorCodes.VALIDATION_ERROR,
+      400,
+      errors.array().map((err) => ({
         field: err.path,
         message: err.msg,
       })),
-    });
+    );
   }
 
   next();

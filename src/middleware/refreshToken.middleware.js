@@ -8,6 +8,7 @@
 const jwt = require('jsonwebtoken');
 const { redisClient } = require('../config/redis');
 const knex = require('../db/db');
+const logger = require('../config/logger');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -30,13 +31,13 @@ const handleRefreshToken = async (req, res, next) => {
         // Token expired => tell frontend to logout
         res.setHeader('x-refresh-status', 'expired');
         res.setHeader('Access-Control-Expose-Headers', 'x-refresh-status');
-        console.warn('Refresh token expired for user');
+        logger.warn('Refresh token expired for user');
         return next();
       }
       // Token is malformed or tampered
       res.setHeader('x-refresh-status', 'invalid');
       res.setHeader('Access-Control-Expose-Headers', 'x-refresh-status');
-      console.warn('Invalid refresh token signature');
+      logger.warn('Invalid refresh token signature');
       return next();
     }
 
@@ -46,7 +47,7 @@ const handleRefreshToken = async (req, res, next) => {
       // Token was revoked (deleted from Redis)
       res.setHeader('x-refresh-status', 'revoked');
       res.setHeader('Access-Control-Expose-Headers', 'x-refresh-status');
-      console.warn(`Refresh token revoked for user ${decoded.id}`);
+      logger.warn(`Refresh token revoked for user ${decoded.id}`);
       return next();
     }
 
@@ -54,7 +55,7 @@ const handleRefreshToken = async (req, res, next) => {
       // Token mismatch (possible tampering or race condition)
       res.setHeader('x-refresh-status', 'invalid');
       res.setHeader('Access-Control-Expose-Headers', 'x-refresh-status');
-      console.warn(`Refresh token mismatch for user ${decoded.id}`);
+      logger.warn(`Refresh token mismatch for user ${decoded.id}`);
       return next();
     }
 
@@ -92,10 +93,10 @@ const handleRefreshToken = async (req, res, next) => {
     // store in locals for debugging use
     res.locals.newAccessToken = newAccessToken;
 
-    console.log(`Auto-refreshed access token for user ${user.id}`);
+    logger.info(`Auto-refreshed access token for user ${user.id}`);
     next();
   } catch (error) {
-    console.error('Refresh token middleware error:', error.message);
+    logger.error('Refresh token middleware error:', error.message);
     next();
   }
 };

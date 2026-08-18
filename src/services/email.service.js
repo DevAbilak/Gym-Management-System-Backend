@@ -1,4 +1,5 @@
 const axios = require('axios');
+const logger = require('../config/logger');
 require('dotenv').config();
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
@@ -21,10 +22,10 @@ const sendEmail = async (to, subject, html) => {
       },
     );
 
-    console.log(`Email sent successfully to ${to}: ${response.data.messageId}`);
+    logger.info(`Email sent successfully to ${to}: ${response.data.messageId}`);
     return true;
   } catch (error) {
-    console.error(
+    logger.error(
       `Failed to send email to ${to}:`,
       error.response?.data || error.message,
     );
