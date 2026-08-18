@@ -1,5 +1,5 @@
-const { redisClient } = require("../config/redis");
-const knex = require("../db/db");
+const { redisClient } = require('../config/redis');
+const knex = require('../db/db');
 
 const MEMBER_CACHE_TTL = 300; // 5 minutes
 
@@ -12,21 +12,21 @@ const getAllMembers = async () => {
   // Build search condition
   if (search) {
     conditions.push(
-      "(u.first_name ILIKE ? OR u.last_name ILIKE ? OR u.email ILIKE ? OR mp.unique_member_id ILIKE ?)",
+      '(u.first_name ILIKE ? OR u.last_name ILIKE ? OR u.email ILIKE ? OR mp.unique_member_id ILIKE ?)',
     );
     const searchPattern = `%${search}%`;
     params.push(searchPattern, searchPattern, searchPattern, searchPattern);
   }
 
   // Build status filter
-  if (status === "active") {
-    conditions.push("u.is_active = true");
-  } else if (status === "inactive") {
-    conditions.push("u.is_active = false");
+  if (status === 'active') {
+    conditions.push('u.is_active = true');
+  } else if (status === 'inactive') {
+    conditions.push('u.is_active = false');
   }
 
   const whereClause =
-    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   // Main query with pagination
   const result = await knex.raw(
@@ -115,7 +115,7 @@ const getMemberById = async (id) => {
     await redisClient.set(
       cacheKey,
       JSON.stringify(member),
-      "EX",
+      'EX',
       MEMBER_CACHE_TTL,
     );
   }
@@ -151,7 +151,7 @@ const getMemberByUserId = async (userId) => {
     await redisClient.set(
       cacheKey,
       JSON.stringify(member),
-      "EX",
+      'EX',
       MEMBER_CACHE_TTL,
     );
   }
@@ -185,7 +185,7 @@ const getMemberByUniqueId = async (uniqueMemberId) => {
     await redisClient.set(
       cacheKey,
       JSON.stringify(member),
-      "EX",
+      'EX',
       MEMBER_CACHE_TTL,
     );
   }
@@ -194,13 +194,13 @@ const getMemberByUniqueId = async (uniqueMemberId) => {
 
 const updateMember = async (id, updates) => {
   const allowedFields = [
-    "date_of_birth",
-    "gender",
-    "fitness_goal",
-    "emergency_contact_name",
-    "emergency_contact_phone",
-    "blood_type",
-    "dietary_restrictions",
+    'date_of_birth',
+    'gender',
+    'fitness_goal',
+    'emergency_contact_name',
+    'emergency_contact_phone',
+    'blood_type',
+    'dietary_restrictions',
   ];
 
   const setClauses = [];
@@ -214,12 +214,12 @@ const updateMember = async (id, updates) => {
   });
 
   if (setClauses.length === 0) {
-    throw new Error("No valid fields to update");
+    throw new Error('No valid fields to update');
   }
 
   values.push(id);
   const query = `
-    UPDATE member_profiles SET ${setClauses.join(", ")}, updated_at = NOW() WHERE id = ?
+    UPDATE member_profiles SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = ?
     RETURNING *
   `;
 
