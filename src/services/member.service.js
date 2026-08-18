@@ -1,4 +1,7 @@
-const knex = require('../db/db');
+const { redisClient } = require("../config/redis");
+const knex = require("../db/db");
+
+const MEMBER_CACHE_TTL = 300; // 5 minutes
 
 const getAllMembers = async () => {
   const { page = 1, limit = 20, search, status } = filters;
@@ -9,21 +12,21 @@ const getAllMembers = async () => {
   // Build search condition
   if (search) {
     conditions.push(
-      '(u.first_name ILIKE ? OR u.last_name ILIKE ? OR u.email ILIKE ? OR mp.unique_member_id ILIKE ?)',
+      "(u.first_name ILIKE ? OR u.last_name ILIKE ? OR u.email ILIKE ? OR mp.unique_member_id ILIKE ?)",
     );
     const searchPattern = `%${search}%`;
     params.push(searchPattern, searchPattern, searchPattern, searchPattern);
   }
 
   // Build status filter
-  if (status === 'active') {
-    conditions.push('u.is_active = true');
-  } else if (status === 'inactive') {
-    conditions.push('u.is_active = false');
+  if (status === "active") {
+    conditions.push("u.is_active = true");
+  } else if (status === "inactive") {
+    conditions.push("u.is_active = false");
   }
 
   const whereClause =
-    conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   // Main query with pagination
   const result = await knex.raw(
@@ -84,6 +87,12 @@ const getAllMembers = async () => {
 };
 
 const getMemberById = async (id) => {
+  const cacheKey = `member:profile:${id}`;
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT
@@ -100,10 +109,27 @@ const getMemberById = async (id) => {
   `,
     [id],
   );
-  return result.rows[0];
+  const member = result.rows[0];
+
+  if (member) {
+    await redisClient.set(
+      cacheKey,
+      JSON.stringify(member),
+      "EX",
+      MEMBER_CACHE_TTL,
+    );
+  }
+
+  return member;
 };
 
 const getMemberByUserId = async (userId) => {
+  const cacheKey = `member:user:${userId}`;
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT
@@ -120,10 +146,24 @@ const getMemberByUserId = async (userId) => {
   `,
     [userId],
   );
-  return result.rows[0];
+  const member = result.rows[0];
+  if (member) {
+    await redisClient.set(
+      cacheKey,
+      JSON.stringify(member),
+      "EX",
+      MEMBER_CACHE_TTL,
+    );
+  }
 };
 
 const getMemberByUniqueId = async (uniqueMemberId) => {
+  const cacheKey = `member:${uniqueMemberId}`;
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT
@@ -140,18 +180,27 @@ const getMemberByUniqueId = async (uniqueMemberId) => {
   `,
     [uniqueMemberId],
   );
-  return result.rows[0];
+  const member = result.rows[0];
+  if (member) {
+    await redisClient.set(
+      cacheKey,
+      JSON.stringify(member),
+      "EX",
+      MEMBER_CACHE_TTL,
+    );
+  }
+  return member;
 };
 
 const updateMember = async (id, updates) => {
   const allowedFields = [
-    'date_of_birth',
-    'gender',
-    'fitness_goal',
-    'emergency_contact_name',
-    'emergency_contact_phone',
-    'blood_type',
-    'dietary_restrictions',
+    "date_of_birth",
+    "gender",
+    "fitness_goal",
+    "emergency_contact_name",
+    "emergency_contact_phone",
+    "blood_type",
+    "dietary_restrictions",
   ];
 
   const setClauses = [];
@@ -165,17 +214,31 @@ const updateMember = async (id, updates) => {
   });
 
   if (setClauses.length === 0) {
-    throw new Error('No valid fields to update');
+    throw new Error("No valid fields to update");
   }
 
   values.push(id);
   const query = `
-    UPDATE member_profiles SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = ?
+    UPDATE member_profiles SET ${setClauses.join(", ")}, updated_at = NOW() WHERE id = ?
     RETURNING *
   `;
 
   const result = await knex.raw(query, values);
-  return result.rows[0];
+  const updatedMember = result.rows[0];
+
+  if (updatedMember) {
+    // --- Invalidate all cached representations of this member ---
+    // By ID
+    await redisClient.del(`member:profile:${id}`);
+    // By User ID
+    await redisClient.del(`member:user:${updatedMember.user_id}`);
+    // By Unique ID (used by check-in)
+    if (updatedMember.unique_member_id) {
+      await redisClient.del(`member:${updatedMember.unique_member_id}`);
+    }
+  }
+
+  return updatedMember;
 };
 
 const deactivateMember = async (id) => {
@@ -194,6 +257,13 @@ const deactivateMember = async (id) => {
   `,
     [member.user_id],
   );
+
+  // Invalidate all caches
+  await redisClient.del(`member:profile:${id}`);
+  await redisClient.del(`member:user:${member.user_id}`);
+  if (member.unique_member_id) {
+    await redisClient.del(`member:${member.unique_member_id}`);
+  }
 
   return {
     ...member,
@@ -216,6 +286,13 @@ const reactivateMember = async (id) => {
   `,
     [member.user_id],
   );
+
+  // Invalidate all caches
+  await redisClient.del(`member:profile:${id}`);
+  await redisClient.del(`member:user:${member.user_id}`);
+  if (member.unique_member_id) {
+    await redisClient.del(`member:${member.unique_member_id}`);
+  }
 
   return {
     ...member,
