@@ -1,4 +1,7 @@
 const knex = require('../db/db');
+const { redisClient } = require('../config/redis');
+
+const CACHE_TTL = 60; // 1 minute
 
 // HELPER FUNCTION: Validate time ordering
 const validateClassTimes = (startTime, endTime) => {
@@ -13,6 +16,15 @@ const validateClassTimes = (startTime, endTime) => {
   }
   if (start >= end) {
     throw new Error('end_time must be after start_time');
+  }
+};
+
+// HELPER FUNCTION: Invalidate cache
+const invalidateClassCache = async () => {
+  // Delete all class list caches (using pattern matching)
+  const keys = await redisClient.keys('classes:*');
+  if (keys.length > 0) {
+    await redisClient.del(keys);
   }
 };
 
@@ -51,11 +63,22 @@ const createClass = async (payload) => {
     ],
   );
 
+  await invalidateClassCache();
   return result.rows[0];
 };
 
 const listClasses = async (filters = {}) => {
   const { date, discipline, trainer_id, page = 1, limit = 20 } = filters;
+
+  const cacheKey = `classes:${date || 'all'}:${discipline || 'all'}:${trainer_id || 'all'}:${page}:${limit}`;
+
+  // check cache
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  // cache miss --> query db
   const conditions = [];
   const params = [];
 
@@ -112,10 +135,20 @@ const listClasses = async (filters = {}) => {
 
   params.push(limit, offset);
   const result = await knex.raw(query, params);
-  return result.rows;
+  const classes = result.rows;
+
+  // store in cache
+  await redisClient.set(cacheKey, JSON.stringify(classes), 'EX', CACHE_TTL);
+  return classes;
 };
 
 const getClassById = async (id) => {
+  const cached = await redisClient.get(`classes:${id}`);
+
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT 
@@ -129,7 +162,16 @@ const getClassById = async (id) => {
   `,
     [id],
   );
-  return result.rows[0];
+
+  const classes = result.rows[0];
+
+  await redisClient.set(
+    `classes:${id}`,
+    JSON.stringify(classes),
+    'EX',
+    CACHE_TTL,
+  );
+  return classes;
 };
 
 const updateClass = async (id, updates) => {
@@ -188,6 +230,8 @@ const updateClass = async (id, updates) => {
     RETURNING *
   `;
   const result = await knex.raw(query, Values);
+
+  await invalidateClassCache();
   return result.rows[0];
 };
 
