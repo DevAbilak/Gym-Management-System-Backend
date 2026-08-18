@@ -1,4 +1,4 @@
-const { body, validationResult, param } = require('express-validator');
+const { body, validationResult, param, query } = require('express-validator');
 const { sendError, ErrorCodes } = require('../utils/response');
 
 // Helper: handle validation errors
@@ -308,8 +308,10 @@ const validateCheckInMember = [
   param('uniqueId')
     .notEmpty()
     .withMessage('uniqueId is required')
-    .isString()
-    .withMessage('uniqueId must be a string'),
+    .matches(/^GYM-[A-Z0-9]{4}-[0-9]$/)
+    .withMessage(
+      'Unique member ID must follow the format: GYM-XXXX-X (e.g., GYM-A3F9-7)',
+    ),
 
   handleValidationErrors,
 ];
@@ -319,12 +321,14 @@ const validateOverrideCheckIn = [
   param('uniqueId')
     .notEmpty()
     .withMessage('uniqueId is required')
-    .isString()
-    .withMessage('uniqueId must be a string'),
+    .matches(/^GYM-[A-Z0-9]{4}-[0-9]$/)
+    .withMessage(
+      'Unique member ID must follow the format: GYM-XXXX-X (e.g., GYM-A3F9-7)',
+    ),
 
   body('reason')
     .notEmpty()
-    .withMessage('Reason is required')
+    .withMessage('Override reason is required')
     .isString()
     .withMessage('Reason must be a string'),
 
@@ -333,12 +337,12 @@ const validateOverrideCheckIn = [
 
 // Validate check-in history
 const validateCheckInHistory = [
-  param('memberId')
-    .notEmpty()
-    .withMessage('memberId is required')
-    .isUUID()
-    .withMessage('memberId must be a valid UUID'),
+  param('memberId').isUUID().withMessage('Invalid member ID format'),
 
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
   handleValidationErrors,
 ];
 

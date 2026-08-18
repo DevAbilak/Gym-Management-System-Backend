@@ -109,10 +109,6 @@ const overRideCheckIn = async (uniqueId, reason, verifiedBy) => {
     throw new Error('Member not found');
   }
 
-  if (!reason) {
-    throw new Error('Override reason is required');
-  }
-
   const result = await knex.raw(
     `
     INSERT INTO attendance_records (

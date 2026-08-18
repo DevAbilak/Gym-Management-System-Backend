@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth.routes');
 const memberRoutes = require('./routes/member.routes');
 const adminRoutes = require('./routes/admin.routes');
 const classRoutes = require('./routes/class.routes');
+const checkinRoutes = require('./routes/checkin.routes');
 const logger = require('./config/logger');
 const knex = require('./db/db');
 const { redisClient } = require('./config/redis');
@@ -31,19 +32,19 @@ app.use((req, res, next) => {
 // apply rate limiter to all /api routes
 app.use('/api', apiLimiter);
 
-// public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/classes', classRoutes);
-
-// admin routes
+app.use('/api/checkin', checkinRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Versioned routes
+app.use('/api/v1', apiLimiter);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/members', memberRoutes);
 app.use('/api/v1/classes', classRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/checkin', checkinRoutes);
 
 // health check
 app.get('/health', async (req, res) => {

@@ -12,10 +12,12 @@ const {
 
 const router = express.Router();
 
+// all routes need authentication
+router.use(authenticate);
+
 // Get member information by unique member ID
 router.get(
   '/member/:uniqueId',
-  authenticate,
   authorize('admin', 'reception'),
   validateCheckInMember,
   checkinController.getMemberByUniqueId,
@@ -24,16 +26,13 @@ router.get(
 // Get today's check-ins
 router.get(
   '/today',
-  authenticate,
   authorize('admin', 'reception'),
   checkinController.getTodayCheckIns,
 );
 
-// Get member check-in history
+// Get member check-in history (allowed for: own, admin , reception)
 router.get(
   '/history/:memberId',
-  authenticate,
-  authorize('admin', 'reception'),
   validateCheckInHistory,
   checkinController.getCheckInHistory,
 );
@@ -41,7 +40,6 @@ router.get(
 // Override check-in
 router.post(
   '/:uniqueId/override',
-  authenticate,
   authorize('admin', 'reception'),
   validateOverrideCheckIn,
   checkinController.overrideCheckIn,
@@ -50,7 +48,6 @@ router.post(
 // Normal check-in
 router.post(
   '/:uniqueId',
-  authenticate,
   authorize('admin', 'reception'),
   validateCheckInMember,
   checkinController.checkIn,
