@@ -232,6 +232,92 @@ const validateUpdateClass = [
   handleValidationErrors,
 ];
 
+// ----------------- TRAINER VALIDATORS ------------------
+
+// Trainer schedule
+const validateTrainerSchedule = [
+  param('trainerId')
+    .isUUID()
+    .withMessage('trainerId must be a valid UUID'),
+
+  body('date')
+    .optional()
+    .isISO8601()
+    .withMessage('date must be a valid date'),
+
+  handleValidationErrors,
+];
+
+
+// Class roster
+const validateClassRoster = [
+  param('trainerId')
+    .isUUID()
+    .withMessage('trainerId must be a valid UUID'),
+
+  param('classId')
+    .isUUID()
+    .withMessage('classId must be a valid UUID'),
+
+  handleValidationErrors,
+];
+
+
+// Member health profile
+const validateMemberHealthProfile = [
+  param('memberProfileId')
+    .isUUID()
+    .withMessage('memberProfileId must be a valid UUID'),
+
+  handleValidationErrors,
+];
+
+
+// Assign workout / meal plan
+const validateAssignPlan = [
+  param('trainerId')
+    .isUUID()
+    .withMessage('trainerId must be a valid UUID'),
+
+  body('member_profile_id')
+    .notEmpty()
+    .withMessage('member_profile_id is required')
+    .isUUID()
+    .withMessage('member_profile_id must be a valid UUID'),
+
+  body('workout_template_id')
+    .optional({ nullable: true })
+    .isUUID()
+    .withMessage('workout_template_id must be a valid UUID'),
+
+  body('meal_plan_id')
+    .optional({ nullable: true })
+    .isUUID()
+    .withMessage('meal_plan_id must be a valid UUID'),
+
+  body('notes')
+    .optional()
+    .isString()
+    .withMessage('notes must be a string'),
+
+  handleValidationErrors,
+];
+
+
+// Personal training attendance
+const validatePersonalTrainingAttendance = [
+  param('memberProfileId')
+    .isUUID()
+    .withMessage('memberProfileId must be a valid UUID'),
+
+  body('notes')
+    .optional()
+    .isString()
+    .withMessage('notes must be a string'),
+
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -239,4 +325,10 @@ module.exports = {
   validateResetPassword,
   validateCreateClass,
   validateUpdateClass,
+
+  validateTrainerSchedule,
+  validateClassRoster,
+  validateMemberHealthProfile,
+  validateAssignPlan,
+  validatePersonalTrainingAttendance,
 };
