@@ -1,100 +1,182 @@
 const trainerService = require('../services/trainer.service');
 
-// GET ALL TRAINERS
-const getAllTrainers = async (req, res, next) => {
+// GET MY TRAINER PROFILE
+const getMyProfile = async (req, res, next) => {
   try {
-    const trainers = await trainerService.getAllTrainers();
+    const userId = req.user.id;
 
-    res.status(200).json(trainers);
-  } catch (error) {
-    next(error);
-  }
-};
+    const result = await trainerService.getTrainerByUserId(userId);
 
-// GET TRAINER BY ID
-const getTrainerById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    const trainer = await trainerService.getTrainerById(id);
-
-    if (!trainer) {
+    if (!result) {
       return res.status(404).json({
-        error: 'Trainer not found',
+        error: 'Trainer profile not found',
       });
     }
 
-    res.status(200).json(trainer);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
 };
 
-// GET TRAINER BY USER ID
-const getTrainerByUserId = async (req, res, next) => {
+
+// GET TRAINER SCHEDULE
+const getSchedule = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const trainerId = req.params.trainerId;
+    const { date } = req.query;
 
-    const trainer = await trainerService.getTrainerByUserId(userId);
-
-    if (!trainer) {
-      return res.status(404).json({
-        error: 'Trainer not found',
-      });
-    }
-
-    res.status(200).json(trainer);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// UPDATE TRAINER PROFILE
-const updateTrainer = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    const trainer = await trainerService.updateTrainer(id, req.body);
-
-    if (!trainer) {
-      return res.status(404).json({
-        error: 'Trainer not found',
-      });
-    }
-
-    res.status(200).json(trainer);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// UPDATE TRAINER AVAILABILITY
-const updateAvailability = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { is_available } = req.body;
-
-    const trainer = await trainerService.updateAvailability(
-      id,
-      is_available,
+    const result = await trainerService.getTrainerSchedule(
+      trainerId,
+      date,
     );
 
-    if (!trainer) {
-      return res.status(404).json({
-        error: 'Trainer not found',
-      });
-    }
-
-    res.status(200).json(trainer);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
 };
 
+
+// GET CLASS ROSTER
+const getClassRoster = async (req, res, next) => {
+  try {
+    const { trainerId, classId } = req.params;
+
+    const result = await trainerService.getClassRoster(
+      trainerId,
+      classId,
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// GET MEMBER HEALTH PROFILE
+const getMemberHealthProfile = async (req, res, next) => {
+  try {
+    const { memberProfileId } = req.params;
+
+    const result =
+      await trainerService.getMemberHealthProfile(memberProfileId);
+
+    if (!result) {
+      return res.status(404).json({
+        error: 'Member not found',
+      });
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// GET WORKOUT TEMPLATES
+const getWorkoutTemplates = async (req, res, next) => {
+  try {
+    const trainerId = req.params.trainerId;
+
+    const result =
+      await trainerService.getWorkoutTemplates(trainerId);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// GET MEAL PLANS
+const getMealPlans = async (req, res, next) => {
+  try {
+    const trainerId = req.params.trainerId;
+
+    const result =
+      await trainerService.getMealPlans(trainerId);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// ASSIGN PLAN
+const assignPlan = async (req, res, next) => {
+  try {
+    const trainerId = req.params.trainerId;
+
+    const {
+      member_profile_id,
+      workout_template_id,
+      meal_plan_id,
+      notes,
+    } = req.body;
+
+    const result = await trainerService.assignPlan({
+      memberProfileId: member_profile_id,
+      trainerId,
+      workoutTemplateId: workout_template_id,
+      mealPlanId: meal_plan_id,
+      notes,
+    });
+
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// GET CLIENT FEEDBACK
+const getClientFeedback = async (req, res, next) => {
+  try {
+    const trainerId = req.params.trainerId;
+
+    const result =
+      await trainerService.getClientFeedback(trainerId);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// RECORD PERSONAL TRAINING ATTENDANCE
+const recordPersonalTrainingAttendance = async (req, res, next) => {
+  try {
+    const { memberProfileId } = req.params;
+    const trainerUserId = req.user.id;
+    const { notes } = req.body;
+
+    const result =
+      await trainerService.recordPersonalTrainingAttendance(
+        memberProfileId,
+        trainerUserId,
+        notes,
+      );
+
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 module.exports = {
-  getAllTrainers,
-  getTrainerById,
-  getTrainerByUserId,
-  updateTrainer,
-  updateAvailability,
+  getMyProfile,
+  getSchedule,
+  getClassRoster,
+  getMemberHealthProfile,
+  getWorkoutTemplates,
+  getMealPlans,
+  assignPlan,
+  getClientFeedback,
+  recordPersonalTrainingAttendance,
 };

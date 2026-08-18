@@ -279,61 +279,86 @@ const validateUpdateClass = [
 
 // ----------------- TRAINER VALIDATORS ------------------
 
-// Trainer ID validator
-const validateTrainerId = [
-  param('id')
+// Trainer schedule
+const validateTrainerSchedule = [
+  param('trainerId')
     .isUUID()
-    .withMessage('Invalid trainer ID format'),
+    .withMessage('trainerId must be a valid UUID'),
+
+  body('date')
+    .optional()
+    .isISO8601()
+    .withMessage('date must be a valid date'),
 
   handleValidationErrors,
 ];
 
-// User ID validator
-const validateUserId = [
-  param('userId')
+
+// Class roster
+const validateClassRoster = [
+  param('trainerId')
     .isUUID()
-    .withMessage('Invalid user ID format'),
+    .withMessage('trainerId must be a valid UUID'),
+
+  param('classId')
+    .isUUID()
+    .withMessage('classId must be a valid UUID'),
 
   handleValidationErrors,
 ];
 
-// Update trainer validator
-const validateUpdateTrainer = [
-  body('specialty')
-    .optional()
-    .isString()
-    .withMessage('Specialty must be a string'),
 
-  body('years_of_experience')
-    .optional()
-    .isInt({ min: 0 })
-    .withMessage('Years of experience must be a non-negative integer'),
-
-  body('certification')
-    .optional()
-    .isString()
-    .withMessage('Certification must be a string'),
-
-  body('bio')
-    .optional()
-    .isString()
-    .withMessage('Bio must be a string'),
-
-  body('hourly_rate')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Hourly rate must be a positive number'),
+// Member health profile
+const validateMemberHealthProfile = [
+  param('memberProfileId')
+    .isUUID()
+    .withMessage('memberProfileId must be a valid UUID'),
 
   handleValidationErrors,
 ];
 
-// Trainer availability validator
-const validateAvailability = [
-  body('is_available')
+
+// Assign workout / meal plan
+const validateAssignPlan = [
+  param('trainerId')
+    .isUUID()
+    .withMessage('trainerId must be a valid UUID'),
+
+  body('member_profile_id')
     .notEmpty()
-    .withMessage('is_available is required')
-    .isBoolean()
-    .withMessage('is_available must be a boolean'),
+    .withMessage('member_profile_id is required')
+    .isUUID()
+    .withMessage('member_profile_id must be a valid UUID'),
+
+  body('workout_template_id')
+    .optional({ nullable: true })
+    .isUUID()
+    .withMessage('workout_template_id must be a valid UUID'),
+
+  body('meal_plan_id')
+    .optional({ nullable: true })
+    .isUUID()
+    .withMessage('meal_plan_id must be a valid UUID'),
+
+  body('notes')
+    .optional()
+    .isString()
+    .withMessage('notes must be a string'),
+
+  handleValidationErrors,
+];
+
+
+// Personal training attendance
+const validatePersonalTrainingAttendance = [
+  param('memberProfileId')
+    .isUUID()
+    .withMessage('memberProfileId must be a valid UUID'),
+
+  body('notes')
+    .optional()
+    .isString()
+    .withMessage('notes must be a string'),
 
   handleValidationErrors,
 ];
@@ -346,12 +371,9 @@ module.exports = {
   validateCreateClass,
   validateUpdateClass,
 
-  validateCheckInMember,
-  validateOverrideCheckIn,
-  validateCheckInHistory,
-
-  validateTrainerId,
-  validateUserId,
-  validateUpdateTrainer,
-  validateAvailability,
+  validateTrainerSchedule,
+  validateClassRoster,
+  validateMemberHealthProfile,
+  validateAssignPlan,
+  validatePersonalTrainingAttendance,
 };
