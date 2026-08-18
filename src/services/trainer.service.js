@@ -1,7 +1,28 @@
 const knex = require('../db/db');
+const { redisClient } = require('../config/redis');
+
+const TRAINER_CACHE_TTL = 300; // 5 minutes
+const SCHEDULE_CACHE_TTL = 120; // 2 minutes
+const ROSTER_CACHE_TTL = 300; // 5 minutes
+const FEEDBACK_CACHE_TTL = 600; // 10 minutes
+
+// HELPER FUNCTION: INVALIDATE TRAINER SCHEDULE CACHE
+const invalidateTrainerScheduleCache = async (trainerId) => {
+  // Delete all schedule caches for this trainer (using pattern matching)
+  const keys = await redisClient.keys(`trainer:schedule:${trainerId}:*`);
+  if (keys.length > 0) {
+    await redisClient.del(keys);
+  }
+};
 
 // GET TRAINER BY ID
 const getTrainerById = async (id) => {
+  const cacheKey = `trainer:profile:${id}`;
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT 
@@ -20,11 +41,29 @@ const getTrainerById = async (id) => {
     [id],
   );
 
-  return result.rows[0];
+  const trainer = result.rows[0];
+
+  if (trainer) {
+    await redisClient.set(
+      cacheKey,
+      JSON.stringify(trainer),
+      'EX',
+      TRAINER_CACHE_TTL,
+    );
+  }
+
+  return trainer;
 };
 
 // GET TRAINER PROFILE
 const getTrainerByUserId = async (userId) => {
+  const cacheKey = `trainer:user:${userId}`;
+
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT
@@ -43,7 +82,16 @@ const getTrainerByUserId = async (userId) => {
     [userId],
   );
 
-  return result.rows[0];
+  const trainer = result.rows[0];
+
+  if (trainer) {
+    await redisClient.set(
+      cacheKey,
+      JSON.stringify(trainer),
+      'EX',
+      TRAINER_CACHE_TTL,
+    );
+  }
 };
 
 // GET ALL TRAINERS
@@ -154,12 +202,29 @@ const updateTrainer = async (id, updates) => {
   `;
 
   const result = await knex.raw(query, values);
-  return result.rows[0];
+  const updatedTrainer = result.rows[0];
+
+  if (updatedTrainer) {
+    // Invalidate all cached representations
+    await redisClient.del(`trainer:profile:${id}`);
+    await redisClient.del(`trainer:user:${updatedTrainer.user_id}`);
+    await invalidateTrainerScheduleCache(id);
+    await redisClient.del(`trainer:roster:${trainerId}`);
+  }
+  return updatedTrainer;
 };
 
 // GET TRAINER DAILY SCHEDULE
 const getTrainerSchedule = async (trainerId, date = null) => {
-  const dateFilter = date ? `AND DATE(c.start_time) = '${date}'` : '';
+  const dateFilter = date ? date : 'all';
+  const cacheKey = `trainer:schedule:${trainerId}:${dateFilter}`;
+
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const dateSQL = date ? `AND DATE(c.start_time) = '${date}'` : '';
 
   const result = await knex.raw(
     `
@@ -180,18 +245,34 @@ const getTrainerSchedule = async (trainerId, date = null) => {
     FROM classes c
     LEFT JOIN class_bookings cb ON c.id = cb.class_id AND cb.status = 'confirmed'
     WHERE c.trainer_id = ? AND c.status = 'scheduled'
-    ${dateFilter}
+    ${dateSQL}
     GROUP BY c.id
     ORDER BY c.start_time ASC
     `,
     [trainerId],
   );
 
-  return result.rows;
+  const schedule = result.rows;
+  if (schedule) {
+    await redisClient.set(
+      cacheKey,
+      JSON.stringify(schedule),
+      'EX',
+      SCHEDULE_CACHE_TTL,
+    );
+  }
+
+  return schedule;
 };
 
 // GET TRAINER ROSTER (Assigned Members)
 const getTrainerRoster = async (trainerId) => {
+  const cacheKey = `trainer:roster:${trainerId}`;
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT DISTINCT
@@ -217,7 +298,17 @@ const getTrainerRoster = async (trainerId) => {
   `,
     [trainerId],
   );
-  return result.rows;
+  const roster = result.rows;
+
+  if (roster) {
+    await redisClient.set(
+      cacheKey,
+      JSON.stringify(roster),
+      'EX',
+      ROSTER_CACHE_TTL,
+    );
+  }
+  return roster;
 };
 
 // DELETE TRAINER (Admin only)
@@ -243,6 +334,12 @@ const deactivateTrainer = async (id) => {
     [id],
   );
 
+  // Invalidate all caches
+  await redisClient.del(`trainer:profile:${id}`);
+  await redisClient.del(`trainer:user:${trainer.user_id}`);
+  await invalidateTrainerScheduleCache(id);
+  await redisClient.del(`trainer:roster:${trainerId}`);
+
   return result.rows[0];
 };
 
@@ -266,11 +363,24 @@ const reactivateTrainer = async (id) => {
     [id],
   );
 
+  // Invalidate all caches
+  await redisClient.del(`trainer:profile:${id}`);
+  await redisClient.del(`trainer:user:${trainer.user_id}`);
+  await invalidateTrainerScheduleCache(id);
+  await redisClient.del(`trainer:roster:${trainerId}`);
+
   return result.rows[0];
 };
 
 // GET CLASS ROSTER
 const getClassRoster = async (trainerId, classId) => {
+  const cacheKey = `trainer:class:${classId}:roster`;
+
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT
@@ -297,7 +407,17 @@ const getClassRoster = async (trainerId, classId) => {
     `,
     [classId, trainerId],
   );
-  return result.rows;
+  const roster = result.rows;
+
+  if (roster) {
+    await redisClient.set(
+      cacheKey,
+      JSON.stringify(roster),
+      'EX',
+      ROSTER_CACHE_TTL,
+    );
+  }
+  return roster;
 };
 
 // // GET TRAINER WORKOUT TEMPLATES
@@ -405,6 +525,13 @@ const getClassRoster = async (trainerId, classId) => {
 
 // GET CLIENT FEEDBACK
 const getClientFeedback = async (trainerId) => {
+  const cacheKey = `trainer:feedback:${trainerId}`;
+
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT
@@ -428,7 +555,17 @@ const getClientFeedback = async (trainerId) => {
     [trainerId],
   );
 
-  return result.rows;
+  const feedback = result.rows;
+  if (feedback) {
+    await redisClient.set(
+      cacheKey,
+      JSON.stringify(feedback),
+      'EX',
+      FEEDBACK_CACHE_TTL,
+    );
+  }
+
+  return feedback;
 };
 
 // RECORD PERSONAL TRAINING ATTENDANCE
@@ -471,4 +608,5 @@ module.exports = {
   // assignPlan,
   getClientFeedback,
   recordPersonalTrainingAttendance,
+  invalidateTrainerScheduleCache,
 };

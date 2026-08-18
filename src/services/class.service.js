@@ -1,5 +1,6 @@
 const knex = require('../db/db');
 const { redisClient } = require('../config/redis');
+const { invalidateTrainerScheduleCache } = require('./trainer.service');
 
 const CACHE_TTL = 60; // 1 minute
 
@@ -64,6 +65,7 @@ const createClass = async (payload) => {
   );
 
   await invalidateClassCache();
+  await invalidateTrainerScheduleCache();
   return result.rows[0];
 };
 
@@ -232,6 +234,7 @@ const updateClass = async (id, updates) => {
   const result = await knex.raw(query, Values);
 
   await invalidateClassCache();
+  await invalidateTrainerScheduleCache();
   return result.rows[0];
 };
 
