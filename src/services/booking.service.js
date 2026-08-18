@@ -1,5 +1,6 @@
 const knex = require('../db/db');
 const crypto = require('crypto');
+const { invalidateTrainerScheduleCache } = require('./trainer.service');
 
 const CANCEL_WINDOW_HOURS = 2;
 
@@ -28,6 +29,8 @@ const bookClass = async (memberProfileId, classId) => {
       );
 
       await trx.commit();
+      await invalidateTrainerScheduleCache(classTrainerId);
+      await redisClient.del(`trainer:class:${classId}:roster`);
       return {
         status: 'waitlisted',
         message: 'Class id full. You are on the waitlist.',
@@ -42,6 +45,8 @@ const bookClass = async (memberProfileId, classId) => {
       [classId, memberProfileId, `BK-${Date.now()}-${random}`],
     );
     await trx.commit();
+    await invalidateTrainerScheduleCache(classTrainerId);
+    await redisClient.del(`trainer:class:${classId}:roster`);
 
     return {
       status: 'confirmed',
@@ -148,6 +153,8 @@ const cancelBooking = async (bookingId) => {
     }
 
     await trx.commit();
+    await invalidateTrainerScheduleCache(classTrainerId);
+    await redisClient.del(`trainer:class:${classId}:roster`);
     return {
       message:
         waitlistResult.rows.length > 0
@@ -253,6 +260,8 @@ const rescheduleBooking = async (bookingId, newClassId) => {
     );
 
     await trx.commit();
+    await invalidateTrainerScheduleCache(classTrainerId);
+    await redisClient.del(`trainer:class:${classId}:roster`);
     return { message: 'Booking rescheduled successfully' };
   } catch (error) {
     await trx.rollback();
