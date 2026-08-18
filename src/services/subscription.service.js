@@ -13,7 +13,7 @@ const createSubscription = async (payload) => {
     ) VALUES (?,?, 'active', ?, ? + INTERVAL '30 days', ?)
     RETURNING *
   `,
-    [member_profile_id, membership_tier_id, start, start, auto_renew || false],
+    [member_profile_id, membership_tier_id, start, start, auto_renew ?? false],
   );
 
   return result.rows[0];
@@ -58,13 +58,13 @@ const getSubscriptionById = async (id) => {
 const getActiveSubscription = async (memberProfileId) => {
   const result = await knex.raw(
     `
-    SELECT s.*, t.name as tier_name, t.price_monthly
+    SELECT s.*, t.name AS tier_name, t.price_monthly
     FROM subscriptions s
-    JOIN membership_tiers t ON s.membership_tier_id = id
-    WHERE s.membership_profile_id = ? AND s.status = 'active'
+    JOIN membership_tiers t ON s.membership_tier_id = t.id
+    WHERE s.member_profile_id = ? AND s.status = 'active'
     ORDER BY s.created_at DESC
     LIMIT 1
-  `,
+    `,
     [memberProfileId],
   );
 
