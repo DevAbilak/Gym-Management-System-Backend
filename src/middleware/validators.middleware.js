@@ -196,6 +196,47 @@ const validateCreateClass = [
   handleValidationErrors,
 ];
 
+// ----------------- CHECK-IN VALIDATORS ------------------
+
+// Validate unique member ID
+const validateCheckInMember = [
+  param('uniqueId')
+    .notEmpty()
+    .withMessage('uniqueId is required')
+    .isString()
+    .withMessage('uniqueId must be a string'),
+
+  handleValidationErrors,
+];
+
+// Validate override check-in
+const validateOverrideCheckIn = [
+  param('uniqueId')
+    .notEmpty()
+    .withMessage('uniqueId is required')
+    .isString()
+    .withMessage('uniqueId must be a string'),
+
+  body('reason')
+    .notEmpty()
+    .withMessage('Reason is required')
+    .isString()
+    .withMessage('Reason must be a string'),
+
+  handleValidationErrors,
+];
+
+// Validate check-in history
+const validateCheckInHistory = [
+  param('memberId')
+    .notEmpty()
+    .withMessage('memberId is required')
+    .isUUID()
+    .withMessage('memberId must be a valid UUID'),
+
+  handleValidationErrors,
+];
+
 // update class validator
 const validateUpdateClass = [
   param('id').isUUID().withMessage('Invalid class ID format'),
@@ -236,6 +277,67 @@ const validateUpdateClass = [
   handleValidationErrors,
 ];
 
+// ----------------- TRAINER VALIDATORS ------------------
+
+// Trainer ID validator
+const validateTrainerId = [
+  param('id')
+    .isUUID()
+    .withMessage('Invalid trainer ID format'),
+
+  handleValidationErrors,
+];
+
+// User ID validator
+const validateUserId = [
+  param('userId')
+    .isUUID()
+    .withMessage('Invalid user ID format'),
+
+  handleValidationErrors,
+];
+
+// Update trainer validator
+const validateUpdateTrainer = [
+  body('specialty')
+    .optional()
+    .isString()
+    .withMessage('Specialty must be a string'),
+
+  body('years_of_experience')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Years of experience must be a non-negative integer'),
+
+  body('certification')
+    .optional()
+    .isString()
+    .withMessage('Certification must be a string'),
+
+  body('bio')
+    .optional()
+    .isString()
+    .withMessage('Bio must be a string'),
+
+  body('hourly_rate')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Hourly rate must be a positive number'),
+
+  handleValidationErrors,
+];
+
+// Trainer availability validator
+const validateAvailability = [
+  body('is_available')
+    .notEmpty()
+    .withMessage('is_available is required')
+    .isBoolean()
+    .withMessage('is_available must be a boolean'),
+
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -243,4 +345,13 @@ module.exports = {
   validateResetPassword,
   validateCreateClass,
   validateUpdateClass,
+
+  validateCheckInMember,
+  validateOverrideCheckIn,
+  validateCheckInHistory,
+
+  validateTrainerId,
+  validateUserId,
+  validateUpdateTrainer,
+  validateAvailability,
 };
