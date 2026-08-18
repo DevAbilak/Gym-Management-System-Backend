@@ -3,8 +3,12 @@ const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const adminController = require('../controllers/admin.controller');
 const memberController = require('../controllers/member.controller');
+const trainerController = require('../controllers/trainer.controller');
+
 const {
   validateDeactivateUser,
+  validateDeactivateTrainer,
+  validateReactivateTrainer,
 } = require('../middleware/validators.middleware');
 
 // All admin routes require authentication and admin role
@@ -31,6 +35,23 @@ router.patch(
   '/members/:id,reactivate',
   validateDeactivateUser,
   memberController.reactivateMember,
+);
+
+// ------- TRAINER MANAGEMENT ---------
+// Deactivate trainer
+router.delete(
+  '/trainers/:id',
+  authorize('admin'),
+  validateDeactivateTrainer,
+  trainerController.deactivateTrainer,
+);
+
+// Reactivate trainer
+router.patch(
+  '/trainers/:id/reactivate',
+  authorize('admin'),
+  validateReactivateTrainer,
+  trainerController.reactivateTrainer,
 );
 
 module.exports = router;

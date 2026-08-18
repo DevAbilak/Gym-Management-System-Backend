@@ -1,182 +1,69 @@
-const trainerService = require('../services/trainer.service');
+const express = require('express');
+const trainerController = require('../controllers/trainer.controller');
+const { authenticate, authorize } = require('../middleware/auth.middleware');
+const {
+  validateGetTrainerById,
+  validateUpdateTrainer,
+  validateGetTrainerSchedule,
+  validateGetTrainerRoster,
+  validateGetClientFeedback,
+  validateClassRoster,
+  validatePersonalTrainingAttendance,
+} = require('../middleware/validators.middleware');
 
-// GET MY TRAINER PROFILE
-const getMyProfile = async (req, res, next) => {
-  try {
-    const userId = req.user.id;
+const router = express.Router();
 
-    const result = await trainerService.getTrainerByUserId(userId);
+// ALL ROUTES REQUIRE AUTHENTICATION
+router.use(authenticate);
 
-    if (!result) {
-      return res.status(404).json({
-        error: 'Trainer profile not found',
-      });
-    }
+router.get('/me', trainerController.getMyProfile);
 
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
+router.get('/:id', validateGetTrainerById, trainerController.getTrainerById);
 
+// Update trainer (owner or admin/reception)
+router.patch('/:id', validateUpdateTrainer, trainerController.updateTrainer);
 
-// GET TRAINER SCHEDULE
-const getSchedule = async (req, res, next) => {
-  try {
-    const trainerId = req.params.trainerId;
-    const { date } = req.query;
+// ADMIN/RECEPTION ONLY -
+router.get(
+  '/',
+  authorize('admin', 'reception'),
+  trainerController.getAllTrainers,
+);
 
-    const result = await trainerService.getTrainerSchedule(
-      trainerId,
-      date,
-    );
+// Trainer schedule (owner or admin/reception)
+router.get(
+  '/:id/schedule',
+  validateGetTrainerSchedule,
+  trainerController.getTrainerSchedule,
+);
 
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
+// Trainer roster (owner or admin/reception)
+router.get(
+  '/:id/roster',
+  validateGetTrainerRoster,
+  trainerController.getTrainerRoster,
+);
 
+// Class roster (owner or admin/reception)
+router.get(
+  '/:trainerId/classes/:classId/roster',
+  validateClassRoster,
+  trainerController.getClassRoster,
+);
 
-// GET CLASS ROSTER
-const getClassRoster = async (req, res, next) => {
-  try {
-    const { trainerId, classId } = req.params;
+// Client feedback (owner or admin/reception)
+router.get(
+  '/:id/feedback',
+  validateGetClientFeedback,
+  trainerController.getClientFeedback,
+);
 
-    const result = await trainerService.getClassRoster(
-      trainerId,
-      classId,
-    );
+// Record personal training attendance (Trainer only)
+router.post(
+  '/attendance/:memberProfileId',
+  authorize('trainer'),
+  validatePersonalTrainingAttendance,
+  trainerController.recordPersonalTrainingAttendance,
+);
 
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-// GET MEMBER HEALTH PROFILE
-const getMemberHealthProfile = async (req, res, next) => {
-  try {
-    const { memberProfileId } = req.params;
-
-    const result =
-      await trainerService.getMemberHealthProfile(memberProfileId);
-
-    if (!result) {
-      return res.status(404).json({
-        error: 'Member not found',
-      });
-    }
-
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-// GET WORKOUT TEMPLATES
-const getWorkoutTemplates = async (req, res, next) => {
-  try {
-    const trainerId = req.params.trainerId;
-
-    const result =
-      await trainerService.getWorkoutTemplates(trainerId);
-
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-// GET MEAL PLANS
-const getMealPlans = async (req, res, next) => {
-  try {
-    const trainerId = req.params.trainerId;
-
-    const result =
-      await trainerService.getMealPlans(trainerId);
-
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-// ASSIGN PLAN
-const assignPlan = async (req, res, next) => {
-  try {
-    const trainerId = req.params.trainerId;
-
-    const {
-      member_profile_id,
-      workout_template_id,
-      meal_plan_id,
-      notes,
-    } = req.body;
-
-    const result = await trainerService.assignPlan({
-      memberProfileId: member_profile_id,
-      trainerId,
-      workoutTemplateId: workout_template_id,
-      mealPlanId: meal_plan_id,
-      notes,
-    });
-
-    res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-// GET CLIENT FEEDBACK
-const getClientFeedback = async (req, res, next) => {
-  try {
-    const trainerId = req.params.trainerId;
-
-    const result =
-      await trainerService.getClientFeedback(trainerId);
-
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-// RECORD PERSONAL TRAINING ATTENDANCE
-const recordPersonalTrainingAttendance = async (req, res, next) => {
-  try {
-    const { memberProfileId } = req.params;
-    const trainerUserId = req.user.id;
-    const { notes } = req.body;
-
-    const result =
-      await trainerService.recordPersonalTrainingAttendance(
-        memberProfileId,
-        trainerUserId,
-        notes,
-      );
-
-    res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-module.exports = {
-  getMyProfile,
-  getSchedule,
-  getClassRoster,
-  getMemberHealthProfile,
-  getWorkoutTemplates,
-  getMealPlans,
-  assignPlan,
-  getClientFeedback,
-  recordPersonalTrainingAttendance,
-};
+module.exports = router;

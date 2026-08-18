@@ -204,6 +204,167 @@ const adminPaths = {
       },
     },
   },
+
+  // ------------ TRAINER MANAGEMENT ------------
+
+  '/admin/trainers': {
+    get: {
+      summary: 'List all trainers (Admin/Reception only)',
+      description:
+        'Returns a paginated list of all trainers with optional filters.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'page',
+          in: 'query',
+          schema: { type: 'integer', default: 1 },
+          description: 'Page number',
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', default: 20, maximum: 100 },
+          description: 'Items per page',
+        },
+        {
+          name: 'search',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Search by name, email, or specialty',
+        },
+        {
+          name: 'is_available',
+          in: 'query',
+          schema: { type: 'boolean' },
+          description: 'Filter by availability',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Trainers retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      data: {
+                        type: 'array',
+                        items: {
+                          $ref: '#/components/schemas/TrainerProfileResponse',
+                        },
+                      },
+                      pagination: {
+                        type: 'object',
+                        properties: {
+                          page: { type: 'integer' },
+                          limit: { type: 'integer' },
+                          total: { type: 'integer' },
+                          totalPages: { type: 'integer' },
+                        },
+                      },
+                    },
+                  },
+                  message: {
+                    type: 'string',
+                    example: 'Trainers retrieved successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+      },
+    },
+  },
+
+  '/admin/trainers/{id}': {
+    delete: {
+      summary: 'Deactivate a trainer (Admin only)',
+      description: 'Soft-deletes a trainer by deactivating their user account.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Trainer profile UUID',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Trainer deactivated successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/TrainerProfileResponse' },
+                  message: {
+                    type: 'string',
+                    example: 'Trainer deactivated successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+        404: { description: 'Trainer not found' },
+      },
+    },
+  },
+
+  '/admin/trainers/{id}/reactivate': {
+    patch: {
+      summary: 'Reactivate a trainer (Admin only)',
+      description: 'Reactivates a previously deactivated trainer.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Trainer profile UUID',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Trainer reactivated successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/TrainerProfileResponse' },
+                  message: {
+                    type: 'string',
+                    example: 'Trainer reactivated successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Trainer not found' },
+      },
+    },
+  },
 };
 
 const adminSchemas = {

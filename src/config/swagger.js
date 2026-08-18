@@ -13,6 +13,7 @@ const { adminPaths, adminSchemas } = require('../docs/admin.docs');
 const { classPaths, classSchemas } = require('../docs/class.docs');
 const { memberPaths, memberSchemas } = require('../docs/member.docs');
 const { checkinPaths, checkinSchemas } = require('../docs/checkin,docs');
+const { trainerPaths, trainerSchemas } = require('../docs/trainer.docs');
 
 const swaggerSpec = {
   openapi: '3.0.0',
@@ -42,6 +43,7 @@ const swaggerSpec = {
     ...classPaths,
     ...memberPaths,
     ...checkinPaths,
+    ...trainerPaths,
   },
   components: {
     securitySchemes: {
@@ -59,6 +61,7 @@ const swaggerSpec = {
       ...classSchemas,
       ...memberSchemas,
       ...checkinSchemas,
+      ...trainerSchemas,
     },
   },
 };

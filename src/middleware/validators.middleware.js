@@ -348,12 +348,52 @@ const validateCheckInHistory = [
 
 // ----------------- TRAINER VALIDATORS ------------------
 
+// Get trainer by ID validator
+const validateGetTrainerById = [
+  param('id').isUUID().withMessage('Invalid trainer ID format'),
+  handleValidationErrors,
+];
+
+// Update trainer validator
+const validateUpdateTrainer = [
+  param('id').isUUID().withMessage('Invalid trainer ID format'),
+  body('specialty')
+    .optional()
+    .isString()
+    .withMessage('Specialty must be a string'),
+  body('years_of_experience')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Years of experience must be a positive integer'),
+  body('certification')
+    .optional()
+    .isString()
+    .withMessage('Certification must be a string'),
+  body('hourly_rate')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Hourly rate must be a positive number'),
+  body('bio').optional().isString().withMessage('Bio must be a string'),
+  body('is_available')
+    .optional()
+    .isBoolean()
+    .withMessage('is_available must be a boolean'),
+  handleValidationErrors,
+];
+
 // Trainer schedule
-const validateTrainerSchedule = [
-  param('trainerId').isUUID().withMessage('trainerId must be a valid UUID'),
+const validateGetTrainerSchedule = [
+  param('id').isUUID().withMessage('Invalid trainer ID format'),
+  query('date')
+    .optional()
+    .isISO8601()
+    .withMessage('date must be a valid date (YYYY-MM-DD)'),
+  handleValidationErrors,
+];
 
-  body('date').optional().isISO8601().withMessage('date must be a valid date'),
-
+// Get trainer roster validator
+const validateGetTrainerRoster = [
+  param('id').isUUID().withMessage('Invalid trainer ID format'),
   handleValidationErrors,
 ];
 
@@ -366,39 +406,30 @@ const validateClassRoster = [
   handleValidationErrors,
 ];
 
-// Member health profile
-const validateMemberHealthProfile = [
-  param('memberProfileId')
-    .isUUID()
-    .withMessage('memberProfileId must be a valid UUID'),
-
-  handleValidationErrors,
-];
-
 // Assign workout / meal plan
-const validateAssignPlan = [
-  param('trainerId').isUUID().withMessage('trainerId must be a valid UUID'),
+// const validateAssignPlan = [
+//   param("trainerId").isUUID().withMessage("trainerId must be a valid UUID"),
 
-  body('member_profile_id')
-    .notEmpty()
-    .withMessage('member_profile_id is required')
-    .isUUID()
-    .withMessage('member_profile_id must be a valid UUID'),
+//   body("member_profile_id")
+//     .notEmpty()
+//     .withMessage("member_profile_id is required")
+//     .isUUID()
+//     .withMessage("member_profile_id must be a valid UUID"),
 
-  body('workout_template_id')
-    .optional({ nullable: true })
-    .isUUID()
-    .withMessage('workout_template_id must be a valid UUID'),
+//   body("workout_template_id")
+//     .optional({ nullable: true })
+//     .isUUID()
+//     .withMessage("workout_template_id must be a valid UUID"),
 
-  body('meal_plan_id')
-    .optional({ nullable: true })
-    .isUUID()
-    .withMessage('meal_plan_id must be a valid UUID'),
+//   body("meal_plan_id")
+//     .optional({ nullable: true })
+//     .isUUID()
+//     .withMessage("meal_plan_id must be a valid UUID"),
 
-  body('notes').optional().isString().withMessage('notes must be a string'),
+//   body("notes").optional().isString().withMessage("notes must be a string"),
 
-  handleValidationErrors,
-];
+//   handleValidationErrors,
+// ];
 
 // Personal training attendance
 const validatePersonalTrainingAttendance = [
@@ -408,6 +439,24 @@ const validatePersonalTrainingAttendance = [
 
   body('notes').optional().isString().withMessage('notes must be a string'),
 
+  handleValidationErrors,
+];
+
+// Get client feedback validator
+const validateGetClientFeedback = [
+  param('id').isUUID().withMessage('Invalid trainer ID format'),
+  handleValidationErrors,
+];
+
+// Deactivate trainer validator
+const validateDeactivateTrainer = [
+  param('id').isUUID().withMessage('Invalid trainer ID format'),
+  handleValidationErrors,
+];
+
+// Reactivate trainer validator
+const validateReactivateTrainer = [
+  param('id').isUUID().withMessage('Invalid trainer ID format'),
   handleValidationErrors,
 ];
 
@@ -430,9 +479,14 @@ module.exports = {
   validateCheckInMember,
   validateOverrideCheckIn,
 
-  validateTrainerSchedule,
+  validateGetTrainerById,
+  validateUpdateTrainer,
+  validateGetTrainerSchedule,
+  validateGetTrainerRoster,
   validateClassRoster,
-  validateMemberHealthProfile,
-  validateAssignPlan,
+  // validateAssignPlan,
   validatePersonalTrainingAttendance,
+  validateGetClientFeedback,
+  validateDeactivateTrainer,
+  validateReactivateTrainer,
 };
