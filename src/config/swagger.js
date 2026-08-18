@@ -5,6 +5,7 @@
  * Imports modular documentation files from src/docs/
  */
 const swaggerUi = require('swagger-ui-express');
+const logger = require('./logger');
 
 // Import modular documentation
 const { authPaths, authSchemas } = require('../docs/auth.docs');
@@ -24,11 +25,11 @@ const swaggerSpec = {
   },
   servers: [
     {
-      url: 'https://gym-management-system-backend-xb5m.onrender.com/api',
+      url: 'https://gym-management-system-backend-xb5m.onrender.com/api/v1',
       description: 'Production Server',
     },
     {
-      url: 'http://localhost:3000/api',
+      url: 'http://localhost:3000/api/v1',
       description: 'Development Server',
     },
   ],
@@ -74,7 +75,7 @@ const setupSwagger = (app) => {
     res.send(swaggerSpec);
   });
 
-  console.log('Swagger docs available at: http://localhost:3000/api-docs');
+  logger.info('Swagger docs available at: http://localhost:3000/api-docs');
 };
 
 module.exports = { setupSwagger, swaggerSpec };

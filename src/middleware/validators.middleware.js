@@ -1,16 +1,20 @@
 const { body, validationResult, param } = require('express-validator');
+const { sendError, ErrorCodes } = require('../utils/response');
 
 // Helper: handle validation errors
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({
-      error: 'Validation failed',
-      details: errors.array().map((err) => ({
+    return sendError(
+      res,
+      'Validation failed',
+      ErrorCodes.VALIDATION_ERROR,
+      400,
+      errors.array().map((err) => ({
         field: err.path,
         message: err.msg,
       })),
-    });
+    );
   }
 
   next();
@@ -188,6 +192,47 @@ const validateCreateClass = [
     .optional()
     .isString()
     .withMessage('Location must be a string'),
+
+  handleValidationErrors,
+];
+
+// ----------------- CHECK-IN VALIDATORS ------------------
+
+// Validate unique member ID
+const validateCheckInMember = [
+  param('uniqueId')
+    .notEmpty()
+    .withMessage('uniqueId is required')
+    .isString()
+    .withMessage('uniqueId must be a string'),
+
+  handleValidationErrors,
+];
+
+// Validate override check-in
+const validateOverrideCheckIn = [
+  param('uniqueId')
+    .notEmpty()
+    .withMessage('uniqueId is required')
+    .isString()
+    .withMessage('uniqueId must be a string'),
+
+  body('reason')
+    .notEmpty()
+    .withMessage('Reason is required')
+    .isString()
+    .withMessage('Reason must be a string'),
+
+  handleValidationErrors,
+];
+
+// Validate check-in history
+const validateCheckInHistory = [
+  param('memberId')
+    .notEmpty()
+    .withMessage('memberId is required')
+    .isUUID()
+    .withMessage('memberId must be a valid UUID'),
 
   handleValidationErrors,
 ];

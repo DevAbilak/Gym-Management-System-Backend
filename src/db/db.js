@@ -6,6 +6,7 @@
  */
 const knex = require('knex');
 const config = require('../../knexfile');
+const logger = require('../config/logger');
 
 // Determine environment (default to 'development')
 const environment = process.env.NODE_ENV || 'development';
@@ -15,9 +16,9 @@ const db = knex(config[environment]);
 
 // Optional: Test the connection on startup
 db.raw('SELECT 1')
-  .then(() => console.log('PostgreSQL connected via Knex'))
+  .then(() => logger.info('PostgreSQL connected via Knex'))
   .catch((err) => {
-    console.error('PostgreSQL connection failed:', err.message);
+    logger.error('PostgreSQL connection failed:', err.message);
     process.exit(1);
   });
 

@@ -7,19 +7,30 @@ const {
   validateForgotPassword,
   validateResetPassword,
 } = require('../middleware/validators.middleware');
+const {
+  authLimiter,
+  sensitiveRoutesLimiter,
+} = require('../middleware/redisRateLimiter.middleware');
 
 const router = express.Router();
 
-router.post('/register', validateRegistration, authController.register);
-router.post('/login', validateLogin, authController.login);
+router.post(
+  '/register',
+  authLimiter,
+  validateRegistration,
+  authController.register,
+);
+router.post('/login', authLimiter, validateLogin, authController.login);
 router.post('/refresh', authController.refreshToken);
 router.post(
   '/forgot-password',
+  sensitiveRoutesLimiter,
   validateForgotPassword,
   authController.forgotPassword,
 );
 router.post(
   '/reset-password',
+  sensitiveRoutesLimiter,
   validateResetPassword,
   authController.resetPassword,
 );
