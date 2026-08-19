@@ -16,6 +16,7 @@ const knex = require('./db/db');
 const { redisClient } = require('./config/redis');
 const { sendSuccess, sendError, ErrorCodes } = require('./utils/response');
 const { apiLimiter } = require('./middleware/redisRateLimiter.middleware');
+const { isMongoConnected } = require('./config/mongo');
 
 const app = express();
 
@@ -76,6 +77,19 @@ app.get('/health', async (req, res) => {
     status.dependencies.redis = 'connected';
   } catch (error) {
     status.dependencies.redis = `error:${error.message}`;
+    status.status = 'degraded';
+  }
+
+  // Check MongoDB
+  try {
+    status.dependencies.mongodb = isMongoConnected()
+      ? 'connected'
+      : 'disconnected';
+    if (!isMongoConnected()) {
+      status.status = 'degraded';
+    }
+  } catch (error) {
+    status.dependencies.mongodb = `error: ${error.message}`;
     status.status = 'degraded';
   }
 

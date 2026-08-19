@@ -7,6 +7,7 @@ module.exports = cleanEnv(process.env, {
   }),
   PORT: port({ default: 3000 }),
   DATABASE_URL: url({ desc: 'Neon PostgreSQL connection string' }),
+  MONGODB_URI: url({ desc: ' MongoDB Atlas connection string' }),
   REDIS_URL: url({ desc: 'Upstash Redis connection string' }),
   JWT_SECRET: str({ desc: 'Secret key for JWT signing' }),
   BREVO_API_KEY: str({ desc: 'Brevo (Sendinblue) API key for emails' }),
