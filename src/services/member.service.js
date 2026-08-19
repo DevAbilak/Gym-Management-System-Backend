@@ -3,7 +3,7 @@ const knex = require('../db/db');
 
 const MEMBER_CACHE_TTL = 300; // 5 minutes
 
-const getAllMembers = async () => {
+const getAllMembers = async (filters) => {
   const { page = 1, limit = 20, search, status } = filters;
   const offset = (page - 1) * limit;
   const conditions = [];
