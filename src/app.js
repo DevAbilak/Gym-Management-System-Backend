@@ -10,6 +10,7 @@ const adminRoutes = require('./routes/admin.routes');
 const classRoutes = require('./routes/class.routes');
 const checkinRoutes = require('./routes/checkin.routes');
 const trainerRoutes = require('./routes/trainer.routes');
+const bookingRoutes = require('./routes/booking.routes');
 const logger = require('./config/logger');
 const knex = require('./db/db');
 const { redisClient } = require('./config/redis');
@@ -39,6 +40,7 @@ app.use('/api/classes', classRoutes);
 app.use('/api/checkin', checkinRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/trainers', trainerRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // Versioned routes
 app.use('/api/v1', apiLimiter);
@@ -48,6 +50,7 @@ app.use('/api/v1/classes', classRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/checkin', checkinRoutes);
 app.use('/api/v1/trainers', trainerRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
 
 // health check
 app.get('/health', async (req, res) => {

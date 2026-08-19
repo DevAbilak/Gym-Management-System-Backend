@@ -460,6 +460,61 @@ const validateReactivateTrainer = [
   handleValidationErrors,
 ];
 
+// ----------------- BOOKING VALIDATORS ------------------
+// Create booking validator
+const validateCreateBooking = [
+  body('member_profile_id')
+    .notEmpty()
+    .withMessage('member_profile_id is required')
+    .isUUID()
+    .withMessage('member_profile_id must be a valid UUID'),
+  body('class_id')
+    .notEmpty()
+    .withMessage('class_id is required')
+    .isUUID()
+    .withMessage('class_id must be a valid UUID'),
+  handleValidationErrors,
+];
+
+// Cancel booking validator
+const validateCancelBooking = [
+  param('id').isUUID().withMessage('Invalid booking ID format'),
+  handleValidationErrors,
+];
+
+// Reschedule booking validator
+const validateRescheduleBooking = [
+  param('id').isUUID().withMessage('Invalid booking ID format'),
+  body('new_class_id')
+    .notEmpty()
+    .withMessage('new_class_id is required')
+    .isUUID()
+    .withMessage('new_class_id must be a valid UUID'),
+  handleValidationErrors,
+];
+
+// Get bookings by member validator
+const validateGetBookingsByMember = [
+  param('memberProfileId')
+    .isUUID()
+    .withMessage('Invalid member profile ID format'),
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  handleValidationErrors,
+];
+
+// Get booking by ID validator
+const validateGetBookingById = [
+  param('id').isUUID().withMessage('Invalid booking ID format'),
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -489,4 +544,10 @@ module.exports = {
   validateGetClientFeedback,
   validateDeactivateTrainer,
   validateReactivateTrainer,
+
+  validateCreateBooking,
+  validateCancelBooking,
+  validateRescheduleBooking,
+  validateGetBookingsByMember,
+  validateGetBookingById,
 };

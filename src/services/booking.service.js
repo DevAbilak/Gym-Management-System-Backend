@@ -297,10 +297,31 @@ const getBookingByMember = async (memberProfileId) => {
   return result.rows;
 };
 
+const getBookingById = async (bookingId) => {
+  const result = await knex.raw(
+    `
+    SELECT 
+      cb.*,
+      c.id AS class_id,
+      c.name AS class_name,
+      c.start_time,
+      c.end_time,
+      mp.user_id AS member_user_id
+    FROM class_bookings cb
+    JOIN classes c ON cb.class_id = c.id
+    JOIN member_profiles mp ON cb.member_profile_id = mp.id
+    WHERE cb.id = ?
+  `,
+    [bookingId],
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   bookClass,
   cancelBooking,
   rescheduleBooking,
   getBookingByMember,
+  getBookingById,
   CANCEL_WINDOW_HOURS,
 };
