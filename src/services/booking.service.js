@@ -1,8 +1,22 @@
 const knex = require('../db/db');
 const crypto = require('crypto');
 const { invalidateTrainerScheduleCache } = require('./trainer.service');
+const { redisClient } = require('../config/redis');
 
 const CANCEL_WINDOW_HOURS = 2;
+const CACHE_TTL = 300; // 5 minutes
+
+// HELPER FUNCTION: INVALIDATE BOOKING CACHE
+const invalidateBookingCache = async (bookingId, memberProfileId) => {
+  // 1.invalidate single booking cache
+  await redisClient.del(`booking:${bookingId}`);
+
+  // 2.invalidate all booking history for this particular member
+  const keys = await redisClient.keys(`bookings:member:${memberProfileId}:*`);
+  if (keys.length > 0) {
+    await redisClient.del(keys);
+  }
+};
 
 const bookClass = async (memberProfileId, classId) => {
   const trx = await knex.transaction();
@@ -19,16 +33,21 @@ const bookClass = async (memberProfileId, classId) => {
       [classId],
     );
 
+    let bookingId;
+
     // if class is full, add to wait list
     if (updatedClass.rows.length === 0) {
-      await trx.raw(
+      const insertResult = await trx.raw(
         `
         INSERT INTO class_bookings (class_id, member_profile_id, booking_reference, status) VALUES (?,?,?,'waitlisted')
+        RETURNING id
       `,
         [classId, memberProfileId, `WL-${Date.now()}-${random}`],
       );
+      bookingId = insertResult.rows[0].id;
 
       await trx.commit();
+      await invalidateBookingCache(bookingId, memberProfileId);
       await invalidateTrainerScheduleCache(classTrainerId);
       await redisClient.del(`trainer:class:${classId}:roster`);
       return {
@@ -38,13 +57,17 @@ const bookClass = async (memberProfileId, classId) => {
     }
 
     // insert confirmed booking if class is not full
-    await trx.raw(
+    const insertResult = await trx.raw(
       `
       INSERT INTO class_bookings (class_id, member_profile_id, booking_reference, status) VALUES (?,?,?, 'confirmed')
+      RETURNING id
     `,
       [classId, memberProfileId, `BK-${Date.now()}-${random}`],
     );
+    bookingId = insertResult.rows[0].id;
+
     await trx.commit();
+    await invalidateBookingCache(bookingId, memberProfileId);
     await invalidateTrainerScheduleCache(classTrainerId);
     await redisClient.del(`trainer:class:${classId}:roster`);
 
@@ -153,6 +176,8 @@ const cancelBooking = async (bookingId) => {
     }
 
     await trx.commit();
+
+    await invalidateBookingCache(bookingId, booking.member_profile_id);
     await invalidateTrainerScheduleCache(classTrainerId);
     await redisClient.del(`trainer:class:${classId}:roster`);
     return {
@@ -242,12 +267,14 @@ const rescheduleBooking = async (bookingId, newClassId) => {
     );
 
     // create new booking in new class
-    await trx.raw(
+    const insertResult = await trx.raw(
       `
       INSERT INTO class_bookings (class_id, member_profile_id, booking_reference, status) VALUES (?,?,?,'confirmed')
+      RETURNING id
     `,
       [newClassId, booking.member_profile_id, `BK-${Date.now()}-${random}`],
     );
+    const newBookingId = insertResult.rows[0].id;
 
     // increment new class capacity
     await trx.raw(
@@ -260,8 +287,12 @@ const rescheduleBooking = async (bookingId, newClassId) => {
     );
 
     await trx.commit();
+
+    await invalidateBookingCache(bookingId, booking.member_profile_id);
+    await invalidateBookingCache(newBookingId, booking.member_profile_id);
     await invalidateTrainerScheduleCache(classTrainerId);
     await redisClient.del(`trainer:class:${classId}:roster`);
+
     return { message: 'Booking rescheduled successfully' };
   } catch (error) {
     await trx.rollback();
@@ -269,7 +300,16 @@ const rescheduleBooking = async (bookingId, newClassId) => {
   }
 };
 
-const getBookingByMember = async (memberProfileId) => {
+const getBookingByMember = async (memberProfileId, page = 1, limit = 20) => {
+  const offset = (page - 1) * limit;
+  const cacheKey = `bookings:member:${memberProfileId}:page:${page}:limit$:${limit}`;
+
+  // check redis
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT 
@@ -290,14 +330,29 @@ const getBookingByMember = async (memberProfileId) => {
     JOIN users u ON tr.user_id = u.id
     WHERE cb.member_profile_id = ?
     ORDER BY c.start_time DESC
+    LIMIT ? OFFSET ?
   `,
-    [memberProfileId],
+    [memberProfileId, limit, offset],
   );
 
-  return result.rows;
+  const bookings = result.rows;
+
+  // set th result in redis cache
+  if (bookings) {
+    await redisClient.set(cacheKey, JSON.stringify(bookings), 'EX', CACHE_TTL);
+  }
+  return bookings;
 };
 
 const getBookingById = async (bookingId) => {
+  const cacheKey = `booking:${bookingId}`;
+
+  // check redis
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const result = await knex.raw(
     `
     SELECT 
@@ -314,7 +369,13 @@ const getBookingById = async (bookingId) => {
   `,
     [bookingId],
   );
-  return result.rows[0];
+  const booking = result.rows[0];
+
+  // store booking in cache
+  if (booking) {
+    await redisClient.set(cacheKey, JSON.stringify(booking), 'EX', CACHE_TTL);
+  }
+  return booking;
 };
 
 module.exports = {
