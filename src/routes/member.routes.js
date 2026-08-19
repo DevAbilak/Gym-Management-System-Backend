@@ -27,6 +27,11 @@ router.patch(
 
 // ADMIN AND RECEPTION ONLY
 router.get(
+  '/',
+  authorize('admin', 'reception'),
+  memberController.getAllMembers,
+);
+router.get(
   '/user/:userId',
   authorize('admin', 'reception'),
   validateGetMemberByUserId,

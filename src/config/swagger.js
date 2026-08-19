@@ -12,7 +12,7 @@ const { authPaths, authSchemas } = require('../docs/auth.docs');
 const { adminPaths, adminSchemas } = require('../docs/admin.docs');
 const { classPaths, classSchemas } = require('../docs/class.docs');
 const { memberPaths, memberSchemas } = require('../docs/member.docs');
-const { checkinPaths, checkinSchemas } = require('../docs/checkin,docs');
+const { checkinPaths, checkinSchemas } = require('../docs/checkin.docs');
 const { trainerPaths, trainerSchemas } = require('../docs/trainer.docs');
 
 const swaggerSpec = {

@@ -1,10 +1,18 @@
+/**
+ * Admin API Documentation (OpenAPI)
+ *
+ * All admin-only endpoints.
+ * All routes require authentication and admin role.
+ */
 const adminPaths = {
-  // --------- AUTH MANAGEMENT -------------
+  // ============================================================
+  // ADMIN: REGISTER USER
+  // ============================================================
   '/admin/register': {
     post: {
       summary: 'Admin: Register any user',
       description:
-        'Creates a user account with any role (member, trainer, reception). Admin-only endpoint.',
+        'Creates a user account with any role (member, trainer, reception). Admin only.',
       tags: ['Admin'],
       security: [{ BearerAuth: [] }],
       requestBody: {
@@ -13,6 +21,14 @@ const adminPaths = {
           'application/json': {
             schema: {
               $ref: '#/components/schemas/AdminRegistrationRequest',
+            },
+            example: {
+              email: 'reception@fitaddis.com',
+              password: 'SecurePass123!',
+              first_name: 'Sarah',
+              last_name: 'Johnson',
+              phone: '+251 9 11 22-33-44',
+              role: 'reception',
             },
           },
         },
@@ -32,100 +48,19 @@ const adminPaths = {
             },
           },
         },
-        400: {
-          description: 'Validation error or missing fields',
-        },
-        403: {
-          description: 'Insufficient permissions (not admin)',
-        },
-        401: {
-          description: 'Unauthenticated (missing or invalid token)',
-        },
+        400: { description: 'Validation error or missing fields' },
+        401: { description: 'Unauthenticated (missing or invalid token)' },
+        403: { description: 'Insufficient permissions (not admin)' },
       },
     },
   },
 
-  // ---------- MEMBER MANAGEMENT ----------
-  '/admin/members': {
-    get: {
-      summary: 'Admin: List all members',
-      description:
-        'Returns a paginated list of all members with optional filters.',
-      tags: ['Admin'],
-      security: [{ BearerAuth: [] }],
-      parameters: [
-        {
-          name: 'page',
-          in: 'query',
-          schema: { type: 'integer', default: 1 },
-          description: 'Page number',
-        },
-        {
-          name: 'limit',
-          in: 'query',
-          schema: { type: 'integer', default: 20, maximum: 100 },
-          description: 'Items per page',
-        },
-        {
-          name: 'search',
-          in: 'query',
-          schema: { type: 'string' },
-          description: 'Search by name, email, or unique member ID',
-        },
-        {
-          name: 'status',
-          in: 'query',
-          schema: { type: 'string', enum: ['active', 'inactive'] },
-          description: 'Filter by member status (active/inactive)',
-        },
-      ],
-      responses: {
-        200: {
-          description: 'Members retrieved successfully',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  success: { type: 'boolean', example: true },
-                  data: {
-                    type: 'object',
-                    properties: {
-                      data: {
-                        type: 'array',
-                        items: {
-                          $ref: '#/components/schemas/MemberProfileResponse',
-                        },
-                      },
-                      pagination: {
-                        type: 'object',
-                        properties: {
-                          page: { type: 'integer' },
-                          limit: { type: 'integer' },
-                          total: { type: 'integer' },
-                          totalPages: { type: 'integer' },
-                        },
-                      },
-                    },
-                  },
-                  message: {
-                    type: 'string',
-                    example: 'Members retrieved successfully',
-                  },
-                },
-              },
-            },
-          },
-        },
-        401: { description: 'Unauthorized' },
-        403: { description: 'Forbidden (insufficient permissions)' },
-      },
-    },
-  },
-
-  '/admin/members/{id}/deactivate': {
-    patch: {
-      summary: 'Admin: Deactivate a member',
+  // ============================================================
+  // ADMIN: MEMBER MANAGEMENT
+  // ============================================================
+  '/admin/members/{id}': {
+    delete: {
+      summary: 'Deactivate a member (Admin only)',
       description: 'Soft-deletes a member by deactivating their user account.',
       tags: ['Admin'],
       security: [{ BearerAuth: [] }],
@@ -166,7 +101,7 @@ const adminPaths = {
 
   '/admin/members/{id}/reactivate': {
     patch: {
-      summary: 'Admin: Reactivate a member',
+      summary: 'Reactivate a member (Admin only)',
       description: 'Reactivates a previously deactivated member.',
       tags: ['Admin'],
       security: [{ BearerAuth: [] }],
@@ -199,91 +134,15 @@ const adminPaths = {
           },
         },
         401: { description: 'Unauthorized' },
-        403: { description: 'Forbidden (insufficient permissions)' },
+        403: { description: 'Forbidden' },
         404: { description: 'Member not found' },
       },
     },
   },
 
-  // ------------ TRAINER MANAGEMENT ------------
-
-  '/admin/trainers': {
-    get: {
-      summary: 'List all trainers (Admin/Reception only)',
-      description:
-        'Returns a paginated list of all trainers with optional filters.',
-      tags: ['Admin'],
-      security: [{ BearerAuth: [] }],
-      parameters: [
-        {
-          name: 'page',
-          in: 'query',
-          schema: { type: 'integer', default: 1 },
-          description: 'Page number',
-        },
-        {
-          name: 'limit',
-          in: 'query',
-          schema: { type: 'integer', default: 20, maximum: 100 },
-          description: 'Items per page',
-        },
-        {
-          name: 'search',
-          in: 'query',
-          schema: { type: 'string' },
-          description: 'Search by name, email, or specialty',
-        },
-        {
-          name: 'is_available',
-          in: 'query',
-          schema: { type: 'boolean' },
-          description: 'Filter by availability',
-        },
-      ],
-      responses: {
-        200: {
-          description: 'Trainers retrieved successfully',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  success: { type: 'boolean', example: true },
-                  data: {
-                    type: 'object',
-                    properties: {
-                      data: {
-                        type: 'array',
-                        items: {
-                          $ref: '#/components/schemas/TrainerProfileResponse',
-                        },
-                      },
-                      pagination: {
-                        type: 'object',
-                        properties: {
-                          page: { type: 'integer' },
-                          limit: { type: 'integer' },
-                          total: { type: 'integer' },
-                          totalPages: { type: 'integer' },
-                        },
-                      },
-                    },
-                  },
-                  message: {
-                    type: 'string',
-                    example: 'Trainers retrieved successfully',
-                  },
-                },
-              },
-            },
-          },
-        },
-        401: { description: 'Unauthorized' },
-        403: { description: 'Forbidden (insufficient permissions)' },
-      },
-    },
-  },
-
+  // ============================================================
+  // ADMIN: TRAINER MANAGEMENT
+  // ============================================================
   '/admin/trainers/{id}': {
     delete: {
       summary: 'Deactivate a trainer (Admin only)',
@@ -392,6 +251,136 @@ const adminSchemas = {
         description: 'Any role can be assigned by admin',
         example: 'reception',
       },
+    },
+  },
+
+  MemberRegistrationResponse: {
+    type: 'object',
+    properties: {
+      user: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          user_id: { type: 'string', format: 'uuid' },
+          unique_member_id: { type: 'string', example: 'GYM-A3F9-7' },
+          date_of_birth: { type: 'string', format: 'date' },
+          gender: { type: 'string' },
+          blood_type: { type: 'string' },
+          dietary_restrictions: { type: 'string' },
+          fitness_goal: { type: 'string' },
+          emergency_contact_name: { type: 'string' },
+          emergency_contact_phone: { type: 'string' },
+          email: { type: 'string' },
+          first_name: { type: 'string' },
+          last_name: { type: 'string' },
+          role: { type: 'string', example: 'member' },
+        },
+      },
+      message: { type: 'string', example: 'Member registration complete!' },
+    },
+  },
+
+  TrainerRegistrationResponse: {
+    type: 'object',
+    properties: {
+      user: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          user_id: { type: 'string', format: 'uuid' },
+          specialty: { type: 'string' },
+          years_of_experience: { type: 'integer' },
+          certification: { type: 'string' },
+          hourly_rate: { type: 'number' },
+          bio: { type: 'string' },
+          email: { type: 'string' },
+          first_name: { type: 'string' },
+          last_name: { type: 'string' },
+          role: { type: 'string', example: 'trainer' },
+        },
+      },
+      message: { type: 'string', example: 'Trainer registration complete!' },
+    },
+  },
+
+  UserRegistrationResponse: {
+    type: 'object',
+    properties: {
+      user: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          email: { type: 'string' },
+          first_name: { type: 'string' },
+          last_name: { type: 'string' },
+          role: { type: 'string', example: 'reception' },
+        },
+      },
+      message: { type: 'string', example: 'User registered successfully.' },
+    },
+  },
+
+  MemberProfileResponse: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      user_id: { type: 'string', format: 'uuid' },
+      unique_member_id: { type: 'string', example: 'GYM-A3F9-7' },
+      date_of_birth: { type: 'string', format: 'date', nullable: true },
+      gender: { type: 'string', enum: ['male', 'female'], nullable: true },
+      blood_type: {
+        type: 'string',
+        enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+        nullable: true,
+      },
+      dietary_restrictions: { type: 'string', nullable: true },
+      fitness_goal: {
+        type: 'string',
+        enum: [
+          'weight_loss',
+          'muscle_building',
+          'maintenance',
+          'general_fitness',
+        ],
+        nullable: true,
+      },
+      emergency_contact_name: { type: 'string', nullable: true },
+      emergency_contact_phone: { type: 'string', nullable: true },
+      email: { type: 'string', format: 'email' },
+      first_name: { type: 'string' },
+      last_name: { type: 'string' },
+      phone: { type: 'string', nullable: true },
+      is_active: { type: 'boolean' },
+      role: {
+        type: 'string',
+        enum: ['member', 'trainer', 'admin', 'reception'],
+      },
+      subscription_status: {
+        type: 'string',
+        enum: ['active', 'frozen', 'expired', 'cancelled'],
+        nullable: true,
+      },
+      tier_name: { type: 'string', nullable: true },
+    },
+  },
+
+  TrainerProfileResponse: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      user_id: { type: 'string', format: 'uuid' },
+      specialty: { type: 'string', nullable: true },
+      years_of_experience: { type: 'integer', nullable: true },
+      certification: { type: 'string', nullable: true },
+      hourly_rate: { type: 'number', nullable: true },
+      bio: { type: 'string', nullable: true },
+      is_available: { type: 'boolean' },
+      email: { type: 'string', format: 'email' },
+      first_name: { type: 'string' },
+      last_name: { type: 'string' },
+      phone: { type: 'string', nullable: true },
+      is_active: { type: 'boolean' },
+      role: { type: 'string', enum: ['trainer'] },
     },
   },
 };

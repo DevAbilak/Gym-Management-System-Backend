@@ -346,7 +346,7 @@ const checkinPaths = {
     get: {
       summary: 'Get today\'s check-ins (Admin/Reception only)',
       description: 'Returns a list of all check-ins recorded today.',
-      tags: ['Admin'],
+      tags: ['Check-in'],
       security: [{ BearerAuth: [] }],
       responses: {
         200: {

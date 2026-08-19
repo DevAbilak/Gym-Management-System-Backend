@@ -2,14 +2,14 @@
  * Member API Documentation (OpenAPI)
  *
  * All member-related endpoints.
- * - Member-facing: /members/me, /members/:id
- * - Admin/Reception: /members/user/:userId, /members/unique/:uniqueMemberId
+ * - Public: None (all require authentication)
+ * - Member: /me, /:id (own profile), PATCH /:id (own profile)
+ * - Admin/Reception: /, /user/:userId, /unique/:uniqueId
  */
 const memberPaths = {
   // ============================================================
-  // MEMBER-FACING ENDPOINTS
+  // CURRENT MEMBER PROFILE
   // ============================================================
-
   '/members/me': {
     get: {
       summary: 'Get current member profile',
@@ -41,6 +41,9 @@ const memberPaths = {
     },
   },
 
+  // ============================================================
+  // MEMBER BY ID (Ownership check)
+  // ============================================================
   '/members/{id}': {
     get: {
       summary: 'Get member by ID',
@@ -108,7 +111,9 @@ const memberPaths = {
         required: true,
         content: {
           'application/json': {
-            schema: { $ref: '#/components/schemas/UpdateMemberRequest' },
+            schema: {
+              $ref: '#/components/schemas/UpdateMemberRequest',
+            },
             example: {
               emergency_contact_name: 'Jane Doe',
               emergency_contact_phone: '+251 9 88 77-66-55',
@@ -145,9 +150,88 @@ const memberPaths = {
   },
 
   // ============================================================
-  // ADMIN/RECEPTION ENDPOINTS (still in memberRoutes)
+  // LIST ALL MEMBERS (Admin/Reception only)
   // ============================================================
+  '/members': {
+    get: {
+      summary: 'List all members (Admin/Reception only)',
+      description:
+        'Returns a paginated list of all members with optional filters.',
+      tags: ['Members'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'page',
+          in: 'query',
+          schema: { type: 'integer', default: 1 },
+          description: 'Page number',
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', default: 20, maximum: 100 },
+          description: 'Items per page',
+        },
+        {
+          name: 'search',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Search by name, email, or unique member ID',
+        },
+        {
+          name: 'status',
+          in: 'query',
+          schema: { type: 'string', enum: ['active', 'inactive'] },
+          description: 'Filter by member status (active/inactive)',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Members retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      data: {
+                        type: 'array',
+                        items: {
+                          $ref: '#/components/schemas/MemberProfileResponse',
+                        },
+                      },
+                      pagination: {
+                        type: 'object',
+                        properties: {
+                          page: { type: 'integer' },
+                          limit: { type: 'integer' },
+                          total: { type: 'integer' },
+                          totalPages: { type: 'integer' },
+                        },
+                      },
+                    },
+                  },
+                  message: {
+                    type: 'string',
+                    example: 'Members retrieved successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+      },
+    },
+  },
 
+  // ============================================================
+  // MEMBER BY USER ID (Admin/Reception only)
+  // ============================================================
   '/members/user/{userId}': {
     get: {
       summary: 'Get member by user ID (Admin/Reception only)',
@@ -190,6 +274,9 @@ const memberPaths = {
     },
   },
 
+  // ============================================================
+  // MEMBER BY UNIQUE ID (Admin/Reception only)
+  // ============================================================
   '/members/unique/{uniqueMemberId}': {
     get: {
       summary: 'Get member by unique member ID (GYM-XXXX-X)',

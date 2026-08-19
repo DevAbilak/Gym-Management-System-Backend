@@ -20,12 +20,9 @@ router.use(authorize('admin'));
 router.post('/register', adminController.adminRegister);
 
 // ------- MEMBER MANAGEMENT ---------
-// get all members
-router.get('/members', memberController.getAllMembers);
-
 // deactivate member
-router.patch(
-  '/members/:id/deactivate',
+router.delete(
+  '/members/:id',
   validateDeactivateUser,
   memberController.deactivateMember,
 );

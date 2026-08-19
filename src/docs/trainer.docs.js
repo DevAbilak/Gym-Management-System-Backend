@@ -1,8 +1,10 @@
 /**
  * Trainer API Documentation (OpenAPI)
  *
- * All trainer-facing endpoints.
- * Admin management endpoints are documented in admin.docs.js.
+ * All trainer-related endpoints.
+ * - Member: None (all require authentication)
+ * - Trainer: /me, /:id (own profile), PATCH /:id (own profile), schedule, roster
+ * - Admin/Reception: / (list all trainers), /user/:userId, etc.
  */
 const trainerPaths = {
   // ============================================================
@@ -34,14 +36,15 @@ const trainerPaths = {
             },
           },
         },
-        401: { description: 'Unauthorized' },
+        401: { description: 'Unauthorized (missing or invalid token)' },
+        403: { description: 'Forbidden (user is not a trainer)' },
         404: { description: 'Trainer profile not found' },
       },
     },
   },
 
   // ============================================================
-  // TRAINER BY ID
+  // TRAINER BY ID (Ownership/Admin)
   // ============================================================
   '/trainers/{id}': {
     get: {
@@ -82,7 +85,7 @@ const trainerPaths = {
           },
         },
         401: { description: 'Unauthorized' },
-        403: { description: 'Forbidden' },
+        403: { description: 'Forbidden (insufficient permissions)' },
         404: { description: 'Trainer not found' },
       },
     },
@@ -145,6 +148,86 @@ const trainerPaths = {
         401: { description: 'Unauthorized' },
         403: { description: 'Forbidden' },
         404: { description: 'Trainer not found' },
+      },
+    },
+  },
+
+  // ============================================================
+  // LIST ALL TRAINERS (Admin/Reception only)
+  // ============================================================
+  '/trainers': {
+    get: {
+      summary: 'List all trainers (Admin/Reception only)',
+      description:
+        'Returns a paginated list of all trainers with optional filters.',
+      tags: ['Trainers'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'page',
+          in: 'query',
+          schema: { type: 'integer', default: 1 },
+          description: 'Page number',
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', default: 20, maximum: 100 },
+          description: 'Items per page',
+        },
+        {
+          name: 'search',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Search by name, email, or specialty',
+        },
+        {
+          name: 'is_available',
+          in: 'query',
+          schema: { type: 'boolean' },
+          description: 'Filter by availability',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Trainers retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      data: {
+                        type: 'array',
+                        items: {
+                          $ref: '#/components/schemas/TrainerProfileResponse',
+                        },
+                      },
+                      pagination: {
+                        type: 'object',
+                        properties: {
+                          page: { type: 'integer' },
+                          limit: { type: 'integer' },
+                          total: { type: 'integer' },
+                          totalPages: { type: 'integer' },
+                        },
+                      },
+                    },
+                  },
+                  message: {
+                    type: 'string',
+                    example: 'Trainers retrieved successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
       },
     },
   },
@@ -488,11 +571,11 @@ const trainerPaths = {
   },
 
   // ============================================================
-  // RECORD PERSONAL TRAINING ATTENDANCE
+  // RECORD PERSONAL TRAINING ATTENDANCE (Trainer only)
   // ============================================================
   '/trainers/attendance/{memberProfileId}': {
     post: {
-      summary: 'Record personal training attendance',
+      summary: 'Record personal training attendance (Trainer only)',
       description: `
         Records a personal training session attendance for a member.
         - **Trainer**: Only trainers can record attendance.
