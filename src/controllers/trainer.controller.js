@@ -1,4 +1,5 @@
-const trainerService = require('../services/trainer.service');
+const trainerService = require("../services/trainer.service");
+const { sendError, sendSuccess, ErrorCodes } = require("../utils/response");
 
 // GET MY TRAINER PROFILE
 const getMyProfile = async (req, res, next) => {
@@ -10,13 +11,13 @@ const getMyProfile = async (req, res, next) => {
     if (!result) {
       return sendError(
         res,
-        'Trainer not found for this user',
+        "Trainer not found for this user",
         ErrorCodes.NOT_FOUND,
         404,
       );
     }
 
-    return sendSuccess(res, trainer, 'Trainer retrieved successfully', 200);
+    return sendSuccess(res, trainer, "Trainer retrieved successfully", 200);
   } catch (error) {
     next(error);
   }
@@ -30,25 +31,25 @@ const getTrainerById = async (req, res, next) => {
     const trainer = await trainerService.getTrainerById(id);
 
     if (!trainer) {
-      return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, "Trainer not found", ErrorCodes.NOT_FOUND, 404);
     }
 
     // Permission check: trainer can only view their own profile
     const isOwn =
-      req.user.role === 'trainer' && req.user.id === trainer.user_id;
+      req.user.role === "trainer" && req.user.id === trainer.user_id;
     const isAdminReception =
-      req.user.role === 'admin' || req.user.role === 'reception';
+      req.user.role === "admin" || req.user.role === "reception";
 
     if (!isOwn && !isAdminReception) {
       return sendError(
         res,
-        'Access denied. You can only view your own profile.',
+        "Access denied. You can only view your own profile.",
         ErrorCodes.FORBIDDEN,
         403,
       );
     }
 
-    return sendSuccess(res, trainer, 'Trainer retrieved successfully', 200);
+    return sendSuccess(res, trainer, "Trainer retrieved successfully", 200);
   } catch (error) {
     next(error);
   }
@@ -66,7 +67,7 @@ const getAllTrainers = async (req, res, next) => {
       is_available,
     });
 
-    return sendSuccess(res, result, 'Trainers retrieved successfully', 200);
+    return sendSuccess(res, result, "Trainers retrieved successfully", 200);
   } catch (error) {
     next(error);
   }
@@ -86,19 +87,19 @@ const updateTrainer = async (req, res, next) => {
     // Check if trainer exists
     const existing = await trainerService.getTrainerById(id);
     if (!existing) {
-      return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, "Trainer not found", ErrorCodes.NOT_FOUND, 404);
     }
 
     // Permission check: trainer can only update their own profile
     const isOwn =
-      req.user.role === 'trainer' && req.user.id === existing.user_id;
+      req.user.role === "trainer" && req.user.id === existing.user_id;
     const isAdminReception =
-      req.user.role === 'admin' || req.user.role === 'reception';
+      req.user.role === "admin" || req.user.role === "reception";
 
     if (!isOwn && !isAdminReception) {
       return sendError(
         res,
-        'Access denied. You can only update your own profile.',
+        "Access denied. You can only update your own profile.",
         ErrorCodes.FORBIDDEN,
         403,
       );
@@ -108,11 +109,11 @@ const updateTrainer = async (req, res, next) => {
 
     logger.info(
       { trainerId: id, userId: req.user.id },
-      'Trainer profile updated',
+      "Trainer profile updated",
     );
-    return sendSuccess(res, updated, 'Trainer updated successfully', 200);
+    return sendSuccess(res, updated, "Trainer updated successfully", 200);
   } catch (error) {
-    if (error.message === 'No valid fields to update') {
+    if (error.message === "No valid fields to update") {
       return sendError(res, error.message, ErrorCodes.VALIDATION_ERROR, 400);
     }
     next(error);
@@ -127,11 +128,11 @@ const deactivateTrainer = async (req, res, next) => {
     const deleted = await trainerService.deactivateTrainer(id);
 
     if (!deleted) {
-      return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, "Trainer not found", ErrorCodes.NOT_FOUND, 404);
     }
 
-    logger.warn({ trainerId: id, userId: req.user.id }, 'Trainer deactivated');
-    return sendSuccess(res, deleted, 'Trainer deactivated successfully', 200);
+    logger.warn({ trainerId: id, userId: req.user.id }, "Trainer deactivated");
+    return sendSuccess(res, deleted, "Trainer deactivated successfully", 200);
   } catch (error) {
     next(error);
   }
@@ -145,14 +146,14 @@ const reactivateTrainer = async (req, res, next) => {
     const reactivated = await trainerService.reactivateTrainer(id);
 
     if (!reactivated) {
-      return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, "Trainer not found", ErrorCodes.NOT_FOUND, 404);
     }
 
-    logger.info({ trainerId: id, userId: req.user.id }, 'Trainer reactivated');
+    logger.info({ trainerId: id, userId: req.user.id }, "Trainer reactivated");
     return sendSuccess(
       res,
       reactivated,
-      'Trainer reactivated successfully',
+      "Trainer reactivated successfully",
       200,
     );
   } catch (error) {
@@ -169,19 +170,19 @@ const getTrainerSchedule = async (req, res, next) => {
     // Check if trainer exists
     const trainer = await trainerService.getTrainerById(id);
     if (!trainer) {
-      return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, "Trainer not found", ErrorCodes.NOT_FOUND, 404);
     }
 
     // Permission check: trainer can only view their own schedule
     const isOwn =
-      req.user.role === 'trainer' && req.user.id === trainer.user_id;
+      req.user.role === "trainer" && req.user.id === trainer.user_id;
     const isAdminReception =
-      req.user.role === 'admin' || req.user.role === 'reception';
+      req.user.role === "admin" || req.user.role === "reception";
 
     if (!isOwn && !isAdminReception) {
       return sendError(
         res,
-        'Access denied. You can only view your own schedule.',
+        "Access denied. You can only view your own schedule.",
         ErrorCodes.FORBIDDEN,
         403,
       );
@@ -199,7 +200,7 @@ const getTrainerSchedule = async (req, res, next) => {
         },
         schedule,
       },
-      'Trainer schedule retrieved successfully',
+      "Trainer schedule retrieved successfully",
       200,
     );
   } catch (error) {
@@ -214,19 +215,19 @@ const getTrainerRoster = async (req, res, next) => {
 
     const trainer = await trainerService.getTrainerById(id);
     if (!trainer) {
-      return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, "Trainer not found", ErrorCodes.NOT_FOUND, 404);
     }
 
     // Permission check: trainer can only view their own roster
     const isOwn =
-      req.user.role === 'trainer' && req.user.id === trainer.user_id;
+      req.user.role === "trainer" && req.user.id === trainer.user_id;
     const isAdminReception =
-      req.user.role === 'admin' || req.user.role === 'reception';
+      req.user.role === "admin" || req.user.role === "reception";
 
     if (!isOwn && !isAdminReception) {
       return sendError(
         res,
-        'Access denied. You can only view your own roster.',
+        "Access denied. You can only view your own roster.",
         ErrorCodes.FORBIDDEN,
         403,
       );
@@ -245,7 +246,7 @@ const getTrainerRoster = async (req, res, next) => {
         count: roster.length,
         roster,
       },
-      'Trainer roster retrieved successfully',
+      "Trainer roster retrieved successfully",
       200,
     );
   } catch (error) {
@@ -261,19 +262,19 @@ const getClassRoster = async (req, res, next) => {
     // Check if trainer exists
     const trainer = await trainerService.getTrainerById(trainerId);
     if (!trainer) {
-      return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, "Trainer not found", ErrorCodes.NOT_FOUND, 404);
     }
 
     // Permission check: trainer can only view their own class roster
     const isOwn =
-      req.user.role === 'trainer' && req.user.id === trainer.user_id;
+      req.user.role === "trainer" && req.user.id === trainer.user_id;
     const isAdminReception =
-      req.user.role === 'admin' || req.user.role === 'reception';
+      req.user.role === "admin" || req.user.role === "reception";
 
     if (!isOwn && !isAdminReception) {
       return sendError(
         res,
-        'Access denied. You can only view your own class rosters.',
+        "Access denied. You can only view your own class rosters.",
         ErrorCodes.FORBIDDEN,
         403,
       );
@@ -281,7 +282,7 @@ const getClassRoster = async (req, res, next) => {
 
     const roster = await trainerService.getClassRoster(trainerId, classId);
 
-    return sendSuccess(res, roster, 'Class roster retrieved successfully', 200);
+    return sendSuccess(res, roster, "Class roster retrieved successfully", 200);
   } catch (error) {
     next(error);
   }
@@ -343,19 +344,19 @@ const getClientFeedback = async (req, res, next) => {
     // Check if trainer exists
     const trainer = await trainerService.getTrainerById(id);
     if (!trainer) {
-      return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, "Trainer not found", ErrorCodes.NOT_FOUND, 404);
     }
 
     // Permission check: trainer can only view their own feedback
     const isOwn =
-      req.user.role === 'trainer' && req.user.id === trainer.user_id;
+      req.user.role === "trainer" && req.user.id === trainer.user_id;
     const isAdminReception =
-      req.user.role === 'admin' || req.user.role === 'reception';
+      req.user.role === "admin" || req.user.role === "reception";
 
     if (!isOwn && !isAdminReception) {
       return sendError(
         res,
-        'Access denied. You can only view your own feedback.',
+        "Access denied. You can only view your own feedback.",
         ErrorCodes.FORBIDDEN,
         403,
       );
@@ -369,7 +370,7 @@ const getClientFeedback = async (req, res, next) => {
         count: feedback.length,
         feedback,
       },
-      'Client feedback retrieved successfully',
+      "Client feedback retrieved successfully",
       200,
     );
   } catch (error) {
@@ -389,7 +390,7 @@ const recordPersonalTrainingAttendance = async (req, res, next) => {
     if (!trainer) {
       return sendError(
         res,
-        'Trainer profile not found for this user',
+        "Trainer profile not found for this user",
         ErrorCodes.NOT_FOUND,
         404,
       );
@@ -403,12 +404,12 @@ const recordPersonalTrainingAttendance = async (req, res, next) => {
 
     req.log.info(
       { memberProfileId, trainerId: trainer.id },
-      'Personal training attendance recorded',
+      "Personal training attendance recorded",
     );
     return sendSuccess(
       res,
       attendance,
-      'Personal training attendance recorded successfully',
+      "Personal training attendance recorded successfully",
       201,
     );
   } catch (error) {
