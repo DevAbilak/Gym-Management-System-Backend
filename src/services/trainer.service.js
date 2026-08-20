@@ -211,7 +211,7 @@ const updateTrainer = async (id, updates) => {
     await redisClient.del(`trainer:profile:${id}`);
     await redisClient.del(`trainer:user:${updatedTrainer.user_id}`);
     await invalidateTrainerScheduleCache(id);
-    await redisClient.del(`trainer:roster:${trainerId}`);
+    await redisClient.del(`trainer:roster:${id}`);
   }
   return updatedTrainer;
 };
@@ -369,7 +369,7 @@ const reactivateTrainer = async (id) => {
   await redisClient.del(`trainer:profile:${id}`);
   await redisClient.del(`trainer:user:${trainer.user_id}`);
   await invalidateTrainerScheduleCache(id);
-  await redisClient.del(`trainer:roster:${trainerId}`);
+  await redisClient.del(`trainer:roster:${trainer.id}`);
 
   return result.rows[0];
 };
