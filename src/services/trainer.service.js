@@ -92,6 +92,8 @@ const getTrainerByUserId = async (userId) => {
       TRAINER_CACHE_TTL,
     );
   }
+
+  return trainer;
 };
 
 // GET ALL TRAINERS

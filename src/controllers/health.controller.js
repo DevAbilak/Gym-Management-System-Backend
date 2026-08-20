@@ -1,8 +1,8 @@
-const healthService = require("../services/health.service");
-const memberService = require("../services/member.service");
-const trainerService = require("../services/trainer.service");
-const { sendSuccess, sendError, ErrorCodes } = require("../utils/response");
-const knex = require("../db");
+const healthService = require('../services/health.service');
+const memberService = require('../services/member.service');
+const trainerService = require('../services/trainer.service');
+const { sendSuccess, sendError, ErrorCodes } = require('../utils/response');
+const knex = require('../db');
 
 // HELPER FUNCTION: Check if trainer is assigned to member
 const isTrainerAssignedToMember = async (trainerUserId, memberProfileId) => {
@@ -27,7 +27,7 @@ const saveHealthProfile = async (req, res, next) => {
 
     const member = await memberService.getMemberById(payload.member_id);
     if (!member) {
-      return sendError(res, "Member not found", ErrorCodes.NOT_FOUND, 404);
+      return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
     }
   } catch (error) {}
 };

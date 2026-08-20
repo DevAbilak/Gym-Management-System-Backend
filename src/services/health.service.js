@@ -1,5 +1,5 @@
-const knex = require("../db/db");
-const healthMetric = require("../models/healthMetric");
+const knex = require('../db/db');
+const healthMetric = require('../models/healthMetric');
 
 const calculateBMI = (weightKg, heightCm) => {
   if (!weightKg || !heightCm) return null;
@@ -22,7 +22,7 @@ const saveHealthProfile = async (payload) => {
 
   // Verify member exists in PostgreSQL
   const memberCheck = await knex.raw(
-    `SELECT id FROM member_profiles WHERE id = ?`,
+    'SELECT id FROM member_profiles WHERE id = ?',
     [member_id],
   );
   if (memberCheck.rows.length === 0) {
@@ -79,9 +79,9 @@ const getMetricsBYDateRange = async (memberId, startDate, endDate) => {
 const deleteMetric = async (id) => {
   const result = await HealthMetric.findByIdAndDelete(id);
   if (!result) {
-    throw new Error("Health metric not found");
+    throw new Error('Health metric not found');
   }
-  return { message: "Health metric deleted successfully" };
+  return { message: 'Health metric deleted successfully' };
 };
 
 const getAllMetricsForMember = async (memberId, page = 1, limit = 20) => {
