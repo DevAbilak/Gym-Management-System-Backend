@@ -515,6 +515,90 @@ const validateGetBookingById = [
   handleValidationErrors,
 ];
 
+// ----------------- HEALTH VALIDATORS ------------------
+// Save health metric validator
+const validateSaveHealthMetric = [
+  body('member_id')
+    .notEmpty()
+    .withMessage('member_id is required')
+    .isUUID()
+    .withMessage('member_id must be a valid UUID'),
+  body('weight_kg')
+    .notEmpty()
+    .withMessage('weight_kg is required')
+    .isFloat({ min: 0 })
+    .withMessage('weight_kg must be a positive number'),
+  body('height_cm')
+    .notEmpty()
+    .withMessage('height_cm is required')
+    .isFloat({ min: 0 })
+    .withMessage('height_cm must be a positive number'),
+  body('blood_type')
+    .optional()
+    .isIn(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
+    .withMessage('Invalid blood type'),
+  body('dietary_restrictions')
+    .optional()
+    .isString()
+    .withMessage('dietary_restrictions must be a string'),
+  body('body_fat_percentage')
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage('body_fat_percentage must be between 0 and 100'),
+  body('muscle_mass_kg')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('muscle_mass_kg must be a positive number'),
+  body('waist_cm')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('waist_cm must be a positive number'),
+  body('notes').optional().isString().withMessage('notes must be a string'),
+  handleValidationErrors,
+];
+
+// Get health metrics history validator
+const validateGetHealthHistory = [
+  param('memberId').isUUID().withMessage('Invalid member ID format'),
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  handleValidationErrors,
+];
+
+// Get latest health metric validator
+const validateGetLatestHealthMetric = [
+  param('memberId').isUUID().withMessage('Invalid member ID format'),
+  handleValidationErrors,
+];
+
+// Get health metrics by date range validator
+const validateGetHealthByDateRange = [
+  param('memberId').isUUID().withMessage('Invalid member ID format'),
+  query('startDate')
+    .notEmpty()
+    .withMessage('startDate is required')
+    .isISO8601()
+    .withMessage('startDate must be a valid date (YYYY-MM-DD)'),
+  query('endDate')
+    .notEmpty()
+    .withMessage('endDate is required')
+    .isISO8601()
+    .withMessage('endDate must be a valid date (YYYY-MM-DD)'),
+  handleValidationErrors,
+];
+
+// Delete health metric validator
+const validateDeleteHealthMetric = [
+  param('id').isMongoId().withMessage('Invalid health metric ID format'),
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -550,4 +634,10 @@ module.exports = {
   validateRescheduleBooking,
   validateGetBookingsByMember,
   validateGetBookingById,
+
+  validateSaveHealthMetric,
+  validateGetHealthHistory,
+  validateGetLatestHealthMetric,
+  validateGetHealthByDateRange,
+  validateDeleteHealthMetric,
 };

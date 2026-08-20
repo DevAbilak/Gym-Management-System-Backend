@@ -224,6 +224,56 @@ const adminPaths = {
       },
     },
   },
+
+  // ============================================================
+  // ADMIN: HEALTH METRICS MANAGEMENT
+  // ============================================================
+  '/admin/health-metrics/{id}': {
+    delete: {
+      summary: 'Delete a health metric (Admin only)',
+      description:
+        'Permanently deletes a health metric by its MongoDB ObjectId.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'MongoDB ObjectId of the health metric',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Health metric deleted successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      message: { type: 'string' },
+                    },
+                  },
+                  message: {
+                    type: 'string',
+                    example: 'Health metric deleted successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (Admin only)' },
+        404: { description: 'Health metric not found' },
+      },
+    },
+  },
 };
 
 const adminSchemas = {

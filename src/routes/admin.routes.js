@@ -4,11 +4,13 @@ const { authenticate, authorize } = require('../middleware/auth.middleware');
 const adminController = require('../controllers/admin.controller');
 const memberController = require('../controllers/member.controller');
 const trainerController = require('../controllers/trainer.controller');
+const healthController = require('../controllers/health.controller');
 
 const {
   validateDeactivateUser,
   validateDeactivateTrainer,
   validateReactivateTrainer,
+  validateDeleteHealthMetric,
 } = require('../middleware/validators.middleware');
 
 // All admin routes require authentication and admin role
@@ -38,7 +40,6 @@ router.patch(
 // Deactivate trainer
 router.delete(
   '/trainers/:id',
-  authorize('admin'),
   validateDeactivateTrainer,
   trainerController.deactivateTrainer,
 );
@@ -46,9 +47,15 @@ router.delete(
 // Reactivate trainer
 router.patch(
   '/trainers/:id/reactivate',
-  authorize('admin'),
   validateReactivateTrainer,
   trainerController.reactivateTrainer,
 );
 
+// ------- HEALTH MANAGEMENT ---------
+// Delete health metric
+router.delete(
+  '/health-metrics/:id',
+  validateDeleteHealthMetric,
+  healthController.deleteMetric,
+);
 module.exports = router;
