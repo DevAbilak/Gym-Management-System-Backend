@@ -17,7 +17,7 @@ const getMyProfile = async (req, res, next) => {
       );
     }
 
-    return sendSuccess(res, trainer, 'Trainer retrieved successfully', 200);
+    return sendSuccess(res, result, 'Trainer retrieved successfully', 200);
   } catch (error) {
     next(error);
   }
