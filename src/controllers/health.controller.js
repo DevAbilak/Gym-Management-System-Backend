@@ -27,6 +27,7 @@ const doesMemberExists = async (member_id) => {
   if (!member) {
     return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
   }
+  return member;
 };
 
 // HELPER FUNCTION: Permission check
@@ -75,7 +76,7 @@ const getLatestMetrics = async (req, res, next) => {
   try {
     const { memberId } = req.params;
 
-    doesMemberExists(memberId);
+    const member = doesMemberExists(memberId);
 
     permissionCheck(req, member.user_id, memberId);
 
@@ -107,7 +108,7 @@ const getMetricsHistory = async (req, res, next) => {
     const { memberId } = req.params;
     const { page = 1, limit = 20 } = req.query;
 
-    doesMemberExists(memberId);
+    const member = doesMemberExists(memberId);
 
     permissionCheck(req, member.user_id, memberId);
 
@@ -140,7 +141,7 @@ const getMetricsByDateRange = async (req, res, next) => {
     const { memberId } = req.params;
     const { startDate, endDate } = req.query;
 
-    doesMemberExists(memberId);
+    const member = doesMemberExists(memberId);
 
     permissionCheck(req, member.user_id, memberId);
 
