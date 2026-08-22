@@ -599,6 +599,376 @@ const validateDeleteHealthMetric = [
   handleValidationErrors,
 ];
 
+// ----------------- TEMPLATE VALIDATORS ------------------
+// ---------- Workout Template Validators ----------
+// Create workout template validator
+const validateCreateWorkoutTemplate = [
+  body('trainer_id')
+    .notEmpty()
+    .withMessage('trainer_id is required')
+    .isUUID()
+    .withMessage('trainer_id must be a valid UUID'),
+  body('name')
+    .notEmpty()
+    .withMessage('name is required')
+    .isString()
+    .withMessage('name must be a string'),
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('description must be a string'),
+  body('difficulty')
+    .optional()
+    .isIn(['beginner', 'intermediate', 'advanced'])
+    .withMessage('Invalid difficulty level'),
+  body('goal_type')
+    .optional()
+    .isIn(['weight_loss', 'muscle_building', 'endurance', 'general_fitness'])
+    .withMessage('Invalid goal type'),
+  body('duration_weeks')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('duration_weeks must be a positive integer'),
+  body('is_public')
+    .optional()
+    .isBoolean()
+    .withMessage('is_public must be a boolean'),
+  body('exercises')
+    .optional()
+    .isArray()
+    .withMessage('exercises must be an array'),
+  body('exercises.*.day_number')
+    .if(body('exercises').exists())
+    .notEmpty()
+    .withMessage('day_number is required for each exercise')
+    .isInt({ min: 1 })
+    .withMessage('day_number must be a positive integer'),
+  body('exercises.*.exercise_name')
+    .if(body('exercises').exists())
+    .notEmpty()
+    .withMessage('exercise_name is required for each exercise')
+    .isString()
+    .withMessage('exercise_name must be a string'),
+  body('exercises.*.sets')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('sets must be a non-negative integer'),
+  body('exercises.*.reps_per_set')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('reps_per_set must be a non-negative integer'),
+  body('exercises.*.weight_kg')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('weight_kg must be a non-negative number'),
+  body('exercises.*.rest_seconds')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('rest_seconds must be a non-negative integer'),
+  body('exercises.*.notes')
+    .optional()
+    .isString()
+    .withMessage('notes must be a string'),
+
+  handleValidationErrors,
+];
+
+// Get workout template by id validator
+const validateGetWorkoutTemplateById = [
+  param('id')
+    .notEmpty()
+    .withMessage('workout template id is required')
+    .isUUID()
+    .withMessage('workout template id must be a valid uuid'),
+];
+
+// Get workout templates validator
+const validateGetWorkoutTemplates = [
+  query('trainer_id')
+    .optional()
+    .isUUID()
+    .withMessage('trainer_id must be a valid UUID'),
+  query('goal_type')
+    .optional()
+    .isIn(['weight_loss', 'muscle_building', 'endurance', 'general_fitness'])
+    .withMessage('Invalid goal type'),
+  query('difficulty')
+    .optional()
+    .isIn(['beginner', 'intermediate', 'advanced'])
+    .withMessage('Invalid difficulty level'),
+  query('include_public')
+    .optional()
+    .isBoolean()
+    .withMessage('is_public must be a boolean'),
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+];
+
+// Update workout template validator
+const validateUpdateWorkoutTemplate = [
+  param('id').isMongoId().withMessage('Invalid workout template ID format'),
+  body('name').optional().isString().withMessage('name must be a string'),
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('description must be a string'),
+  body('difficulty')
+    .optional()
+    .isIn(['beginner', 'intermediate', 'advanced'])
+    .withMessage('Invalid difficulty level'),
+  body('goal_type')
+    .optional()
+    .isIn(['weight_loss', 'muscle_building', 'endurance', 'general_fitness'])
+    .withMessage('Invalid goal type'),
+  body('duration_weeks')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('duration_weeks must be a positive integer'),
+  body('is_public')
+    .optional()
+    .isBoolean()
+    .withMessage('is_public must be a boolean'),
+  body('exercises')
+    .optional()
+    .isArray()
+    .withMessage('exercises must be an array'),
+  body('exercises.*.day_number')
+    .if(body('exercises').exists())
+    .notEmpty()
+    .withMessage('day_number is required for each exercise')
+    .isInt({ min: 1 })
+    .withMessage('day_number must be a positive integer'),
+  body('exercises.*.exercise_name')
+    .if(body('exercises').exists())
+    .notEmpty()
+    .withMessage('exercise_name is required for each exercise')
+    .isString()
+    .withMessage('exercise_name must be a string'),
+  body('exercises.*.sets')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('sets must be a non-negative integer'),
+  body('exercises.*.reps_per_set')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('reps_per_set must be a non-negative integer'),
+  body('exercises.*.weight_kg')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('weight_kg must be a non-negative number'),
+  body('exercises.*.rest_seconds')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('rest_seconds must be a non-negative integer'),
+  body('exercises.*.notes')
+    .optional()
+    .isString()
+    .withMessage('notes must be a string'),
+  handleValidationErrors,
+];
+
+// Delete workout template validator
+const validateDeleteWorkoutTemplate = [
+  param('id')
+    .notEmpty()
+    .withMessage('workout template id is required')
+    .isUUID()
+    .withMessage('workout template id must be a valid uuid'),
+];
+
+// ---------- Meal Plan Validators ----------
+// Create meal plan validator
+const validateCreateMealPlan = [
+  body('trainer_id')
+    .notEmpty()
+    .withMessage('trainer_id is required')
+    .isUUID()
+    .withMessage('trainer_id must be a valid UUID'),
+  body('name')
+    .notEmpty()
+    .withMessage('name is required')
+    .isString()
+    .withMessage('name must be a string'),
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('description must be a string'),
+  body('goal_type')
+    .optional()
+    .isIn(['weight_loss', 'muscle_building', 'maintenance'])
+    .withMessage('Invalid goal type'),
+  body('calories_target')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('calories_target must be a non-negative integer'),
+  body('protein_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('protein_g must be a non-negative integer'),
+  body('carbs_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('carbs_g must be a non-negative integer'),
+  body('fat_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('fat_g must be a non-negative integer'),
+  body('items').optional().isArray().withMessage('items must be an array'),
+  body('items.*.day_number')
+    .if(body('items').exists())
+    .notEmpty()
+    .withMessage('day_number is required for each item')
+    .isInt({ min: 1 })
+    .withMessage('day_number must be a positive integer'),
+  body('items.*.meal_name')
+    .if(body('items').exists())
+    .notEmpty()
+    .withMessage('meal_name is required for each item')
+    .isIn(['Breakfast', 'Lunch', 'Dinner', 'Snack'])
+    .withMessage('meal_name must be one of: Breakfast, Lunch, Dinner, Snack'),
+  body('items.*.food_item')
+    .if(body('items').exists())
+    .notEmpty()
+    .withMessage('food_item is required for each item')
+    .isString()
+    .withMessage('food_item must be a string'),
+  body('items.*.quantity')
+    .optional()
+    .isString()
+    .withMessage('quantity must be a string'),
+  body('items.*.calories')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('calories must be a non-negative integer'),
+  body('items.*.protein_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('protein_g must be a non-negative integer'),
+  body('items.*.carbs_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('carbs_g must be a non-negative integer'),
+  body('items.*.fat_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('fat_g must be a non-negative integer'),
+  handleValidationErrors,
+];
+
+// Update meal plan validator
+const validateUpdateMealPlan = [
+  param('id').isMongoId().withMessage('Invalid meal plan ID format'),
+  body('name').optional().isString().withMessage('name must be a string'),
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('description must be a string'),
+  body('goal_type')
+    .optional()
+    .isIn(['weight_loss', 'muscle_building', 'maintenance'])
+    .withMessage('Invalid goal type'),
+  body('calories_target')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('calories_target must be a non-negative integer'),
+  body('protein_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('protein_g must be a non-negative integer'),
+  body('carbs_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('carbs_g must be a non-negative integer'),
+  body('fat_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('fat_g must be a non-negative integer'),
+  body('items').optional().isArray().withMessage('items must be an array'),
+  body('items.*.day_number')
+    .if(body('items').exists())
+    .notEmpty()
+    .withMessage('day_number is required for each item')
+    .isInt({ min: 1 })
+    .withMessage('day_number must be a positive integer'),
+  body('items.*.meal_name')
+    .if(body('items').exists())
+    .notEmpty()
+    .withMessage('meal_name is required for each item')
+    .isIn(['Breakfast', 'Lunch', 'Dinner', 'Snack'])
+    .withMessage('meal_name must be one of: Breakfast, Lunch, Dinner, Snack'),
+  body('items.*.food_item')
+    .if(body('items').exists())
+    .notEmpty()
+    .withMessage('food_item is required for each item')
+    .isString()
+    .withMessage('food_item must be a string'),
+  body('items.*.quantity')
+    .optional()
+    .isString()
+    .withMessage('quantity must be a string'),
+  body('items.*.calories')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('calories must be a non-negative integer'),
+  body('items.*.protein_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('protein_g must be a non-negative integer'),
+  body('items.*.carbs_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('carbs_g must be a non-negative integer'),
+  body('items.*.fat_g')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('fat_g must be a non-negative integer'),
+  handleValidationErrors,
+];
+
+// Get meal plan by id validator
+const validateGetMealPlanById = [
+  param('id')
+    .notEmpty()
+    .withMessage('workout template id is required')
+    .isUUID()
+    .withMessage('workout template id must be a valid uuid'),
+];
+
+// Delete meal plan validator
+const validateDeleteMealPlan = [
+  param('id')
+    .notEmpty()
+    .withMessage('workout template id is required')
+    .isUUID()
+    .withMessage('workout template id must be a valid uuid'),
+];
+
+// Get meal plans validator
+const validateGetMealPlans = [
+  query('trainer_id')
+    .optional()
+    .isUUID()
+    .withMessage('trainer_id must be a valid UUID'),
+  query('goal_type')
+    .optional()
+    .isIn(['weight_loss', 'muscle_building', 'maintenance'])
+    .withMessage('Invalid goal type'),
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -640,4 +1010,15 @@ module.exports = {
   validateGetLatestHealthMetric,
   validateGetHealthByDateRange,
   validateDeleteHealthMetric,
+
+  validateCreateWorkoutTemplate,
+  validateUpdateWorkoutTemplate,
+  validateGetWorkoutTemplateById,
+  validateGetWorkoutTemplates,
+  validateDeleteWorkoutTemplate,
+  validateCreateMealPlan,
+  validateUpdateMealPlan,
+  validateGetMealPlans,
+  validateGetMealPlanById,
+  validateDeleteMealPlan,
 };

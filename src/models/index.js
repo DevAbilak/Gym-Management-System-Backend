@@ -1,7 +1,7 @@
-const HealthMetric = require('./HealthMetric');
-const WorkoutTemplate = require('./WorkoutTemplate');
-const MealPlan = require('./MealPlan');
-const Notification = require('./Notification');
+const HealthMetric = require('./healthMetric');
+const WorkoutTemplate = require('./workoutTemplate');
+const MealPlan = require('./mealPlan');
+const Notification = require('./notification');
 
 module.exports = {
   HealthMetric,

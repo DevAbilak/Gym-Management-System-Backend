@@ -31,7 +31,7 @@ router.delete(
 
 // reactivate member
 router.patch(
-  '/members/:id,reactivate',
+  '/members/:id/reactivate',
   validateDeactivateUser,
   memberController.reactivateMember,
 );
