@@ -31,7 +31,7 @@ const doesMemberExists = async (member_id) => {
 };
 
 // HELPER FUNCTION: Permission check
-const permissionCheck = async (req, userId, memberId) => {
+const permissionCheck = async (req, res, userId, memberId) => {
   const isOwn = req.user.role === 'member' && req.user.id === userId;
   const isAdminReception =
     req.user.role === 'admin' || req.user.role === 'reception';
@@ -78,7 +78,7 @@ const getLatestMetrics = async (req, res, next) => {
 
     const member = doesMemberExists(memberId);
 
-    permissionCheck(req, member.user_id, memberId);
+    permissionCheck(req, res, member.user_id, memberId);
 
     // fetch from MongoDB
     const metrics = await healthService.getLatestMetrics(memberId);
@@ -110,7 +110,7 @@ const getMetricsHistory = async (req, res, next) => {
 
     const member = doesMemberExists(memberId);
 
-    permissionCheck(req, member.user_id, memberId);
+    permissionCheck(req, res, member.user_id, memberId);
 
     const history = await healthService.getMetricsHistory(
       memberId,
@@ -143,7 +143,7 @@ const getMetricsByDateRange = async (req, res, next) => {
 
     const member = doesMemberExists(memberId);
 
-    permissionCheck(req, member.user_id, memberId);
+    permissionCheck(req, res, member.user_id, memberId);
 
     const metrics = await healthService.getMetricsBYDateRange(
       memberId,
