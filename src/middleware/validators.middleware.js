@@ -969,6 +969,56 @@ const validateGetMealPlans = [
     .withMessage('Limit must be between 1 and 100'),
 ];
 
+// ---------- NOTIFICATION VALIDATORS ----------
+
+// Get my notifications validator
+const validateGetNotifications = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  handleValidationErrors,
+];
+
+// Mark notification as read validator
+const validateMarkAsRead = [
+  param('id').isMongoId().withMessage('Invalid notification ID format'),
+  handleValidationErrors,
+];
+
+// Delete notification validator
+const validateDeleteNotification = [
+  param('id').isMongoId().withMessage('Invalid notification ID format'),
+  handleValidationErrors,
+];
+
+// Get user notifications (admin) validator
+const validateGetUserNotifications = [
+  param('userId').isUUID().withMessage('Invalid user ID format'),
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  handleValidationErrors,
+];
+
+// Cleanup notifications validator
+const validateCleanup = [
+  query('days')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('days must be a positive integer'),
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -1021,4 +1071,10 @@ module.exports = {
   validateGetMealPlans,
   validateGetMealPlanById,
   validateDeleteMealPlan,
+
+  validateGetNotifications,
+  validateMarkAsRead,
+  validateDeleteNotification,
+  validateGetUserNotifications,
+  validateCleanup,
 };

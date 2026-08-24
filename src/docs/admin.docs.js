@@ -10,7 +10,7 @@ const adminPaths = {
   // ============================================================
   '/admin/register': {
     post: {
-      summary: 'Admin: Register any user',
+      summary: 'Register any user (Admin only)',
       description:
         'Creates a user account with any role (member, trainer, reception). Admin only.',
       tags: ['Admin'],
@@ -271,6 +271,52 @@ const adminPaths = {
         401: { description: 'Unauthorized' },
         403: { description: 'Forbidden (Admin only)' },
         404: { description: 'Health metric not found' },
+      },
+    },
+  },
+
+  // ============================================================
+  // ADMIN: CLEANUP OLD NOTIFICATIONS
+  // ============================================================
+  '/admin/notifications/cleanup': {
+    delete: {
+      summary: 'Cleanup old read notifications (Admin only)',
+      description:
+        'Deletes read notifications older than a specified number of days. Admin only.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'days',
+          in: 'query',
+          schema: { type: 'integer', default: 30 },
+          description: 'Delete notifications older than this many days',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Old notifications cleaned up',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      message: { type: 'string' },
+                      deletedCount: { type: 'integer' },
+                    },
+                  },
+                  message: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (Admin only)' },
       },
     },
   },
