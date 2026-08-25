@@ -68,7 +68,7 @@ const bookClass = async (memberProfileId, classId) => {
 
     await trx.commit();
     await invalidateBookingCache(bookingId, memberProfileId);
-    await invalidateTrainerScheduleCache(classTrainerId);
+    await invalidateTrainerScheduleCache(updatedClass.trainer_id);
     await redisClient.del(`trainer:class:${classId}:roster`);
 
     return {
