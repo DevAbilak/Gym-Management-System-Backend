@@ -1,8 +1,12 @@
 const { v4: uuidv4 } = require('uuid');
+const logger = require('../config/logger');
 
 const requestId = (req, res, next) => {
   const reqId = req.headers['x-request-id'] || uuidv4();
   req.id = reqId;
+
+  req.log = logger.child({ reqId: req.id });
+
   res.setHeader('X-Request-Id', reqId);
 
   // log request start
