@@ -243,7 +243,7 @@ const updateMember = async (id, updates) => {
 };
 
 const deactivateMember = async (id) => {
-  const member = getMemberById(id);
+  const member = await getMemberById(id);
   if (!member) {
     return null;
   }
@@ -254,7 +254,7 @@ const deactivateMember = async (id) => {
     UPDATE users
     SET is_active = false, updated_at = NOW()
     WHERE id = ?
-    RETURNING id,email,first_name,last_name,is_active  
+    RETURNING id,email,first_name,last_name,is_active 
   `,
     [member.user_id],
   );
@@ -265,6 +265,8 @@ const deactivateMember = async (id) => {
   if (member.unique_member_id) {
     await redisClient.del(`member:${member.unique_member_id}`);
   }
+
+  delete member.is_active;
 
   return {
     ...member,
@@ -294,6 +296,8 @@ const reactivateMember = async (id) => {
   if (member.unique_member_id) {
     await redisClient.del(`member:${member.unique_member_id}`);
   }
+
+  delete member.is_active;
 
   return {
     ...member,
