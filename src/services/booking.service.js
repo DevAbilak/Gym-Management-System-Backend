@@ -48,7 +48,7 @@ const bookClass = async (memberProfileId, classId) => {
 
       await trx.commit();
       await invalidateBookingCache(bookingId, memberProfileId);
-      await invalidateTrainerScheduleCache(classTrainerId);
+      await invalidateTrainerScheduleCache(updatedClass.trainer_id);
       await redisClient.del(`trainer:class:${classId}:roster`);
       return {
         status: 'waitlisted',
@@ -96,7 +96,7 @@ const cancelBooking = async (bookingId) => {
         c.start_time
       FROM class_bookings cb
       JOIN classes c ON cb.class_id = c.id
-      WHERE id = ?
+      WHERE cb.id = ?
     `,
       [bookingId],
     );
