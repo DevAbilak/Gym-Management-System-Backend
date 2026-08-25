@@ -12,18 +12,31 @@ const sendSuccess = (res, data, message = 'Success', statusCode = 200) => {
   });
 };
 
-const sendError = (res, error, code = 'INTERNAL_ERROR', statusCode = 500) => {
+const sendError = (
+  res,
+  error,
+  code = 'INTERNAL_ERROR',
+  statusCode = 500,
+  details = null,
+) => {
   const message =
     typeof error === 'string'
       ? error
       : error.message || 'Internal Server Error';
   const errorCode = error.code || code;
 
-  return res.status(statusCode).json({
+  const response = {
     success: false,
     error: message,
     code: errorCode,
-  });
+  };
+
+  // Include details if provided
+  if (details) {
+    response.details = details;
+  }
+
+  return res.status(statusCode).json(response);
 };
 
 // Pre-defined error codes
