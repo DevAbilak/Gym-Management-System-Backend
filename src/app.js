@@ -18,6 +18,7 @@ const knex = require('./db/db');
 const { redisClient } = require('./config/redis');
 const { sendSuccess, sendError, ErrorCodes } = require('./utils/response');
 const { apiLimiter } = require('./middleware/redisRateLimiter.middleware');
+const { requestId } = require('./middleware/requestId.middleware');
 const { isMongoConnected } = require('./config/mongo');
 
 const app = express();
@@ -26,13 +27,8 @@ app.use(cors());
 app.use(helmet());
 app.use(compression());
 app.use(express.json());
+app.use(requestId);
 app.use(handleRefreshToken);
-
-app.use((req, res, next) => {
-  // attaching logger to request for easy logging inside controllers
-  req.log = logger.child({ reqId: req.id });
-  next();
-});
 
 // apply rate limiter to all /api routes
 app.use('/api', apiLimiter);
