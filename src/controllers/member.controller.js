@@ -20,9 +20,9 @@ const getAllMembers = async (req, res, next) => {
 const getMemberById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await memberService.getMemberById(id);
+    const member = await memberService.getMemberById(id);
 
-    if (!result) {
+    if (!member) {
       return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
     }
 
