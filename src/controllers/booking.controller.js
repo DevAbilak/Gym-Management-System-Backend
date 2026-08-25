@@ -55,6 +55,14 @@ const bookClass = async (req, res, next) => {
     );
     return sendSuccess(res, result, result.message, 201);
   } catch (error) {
+    if (error.message === 'Already booked') {
+      return sendError(
+        res,
+        'You have already booked this class.',
+        ErrorCodes.CONFLICT,
+        409,
+      );
+    }
     next(error);
   }
 };

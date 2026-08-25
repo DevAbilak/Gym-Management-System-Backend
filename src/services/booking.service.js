@@ -23,6 +23,18 @@ const bookClass = async (memberProfileId, classId) => {
   const random = crypto.randomBytes(3).toString('hex').toUpperCase();
 
   try {
+    // Check if already booked
+    const existingBooking = await trx.raw(
+      `
+      SELECT id, status FROM class_bookings
+      WHERE member_profile_id = ? AND class_id = ?
+      `,
+      [memberProfileId, classId],
+    );
+    if (existingBooking.rows.length > 0) {
+      throw new Error('Already booked');
+    }
+
     const updatedClass = await trx.raw(
       `
       UPDATE classes
