@@ -1,10 +1,6 @@
 const express = require('express');
 const memberController = require('../controllers/member.controller');
-const {
-  authenticate,
-  authorize,
-  requireOwnership,
-} = require('../middleware/auth.middleware');
+const { authenticate, authorize } = require('../middleware/auth.middleware');
 const {
   validateGetMemberById,
   validateGetMemberByUserId,
@@ -20,7 +16,7 @@ router.get('/me', memberController.getCurrentMember);
 router.get('/:id', validateGetMemberById, memberController.getMemberById);
 router.patch(
   '/:id',
-  requireOwnership('id'),
+  authorize('member', 'admin', 'reception'),
   validateUpdateMember,
   memberController.updateMember,
 );
@@ -38,7 +34,7 @@ router.get(
   memberController.getMemberByUserId,
 );
 router.get(
-  '/unique/:uniqueId',
+  '/unique/:uniqueMemberId',
   authorize('admin', 'reception'),
   validateGetMemberByUniqueId,
   memberController.getMemberByUniqueId,

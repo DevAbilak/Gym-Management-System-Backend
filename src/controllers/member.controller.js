@@ -101,6 +101,25 @@ const updateMember = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    const existingMember = await memberService.getMemberById(id);
+    if (!existingMember) {
+      return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
+    }
+
+    // Permission checks
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Member: can only update their own profile
+    if (userRole === 'member' && userId !== existingMember.user_id) {
+      return sendError(
+        res,
+        'Access denied. You can only update your own profile.',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
+
     // Prevent updating protected fields
     const updates = req.body;
     delete updates.id;
