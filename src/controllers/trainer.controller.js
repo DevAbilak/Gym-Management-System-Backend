@@ -1,4 +1,5 @@
 const trainerService = require('../services/trainer.service');
+const classService = require('../services/class.service');
 const { sendError, sendSuccess, ErrorCodes } = require('../utils/response');
 
 // GET MY TRAINER PROFILE
@@ -107,7 +108,7 @@ const updateTrainer = async (req, res, next) => {
 
     const updated = await trainerService.updateTrainer(id, updates);
 
-    logger.info(
+    req.log.info(
       { trainerId: id, userId: req.user.id },
       'Trainer profile updated',
     );
@@ -265,9 +266,18 @@ const getClassRoster = async (req, res, next) => {
       return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
     }
 
+    // Check if class exists
+    const result = await classService.getClassById(classId);
+    if (!result) {
+      return sendError(res, 'Class not found', ErrorCodes.NOT_FOUND, 404);
+    }
+
     // Permission check: trainer can only view their own class roster
     const isOwn =
-      req.user.role === 'trainer' && req.user.id === trainer.user_id;
+      req.user.role === 'trainer' &&
+      req.user.id === trainer.user_id &&
+      result.trainer_id === trainerId;
+
     const isAdminReception =
       req.user.role === 'admin' || req.user.role === 'reception';
 
@@ -382,7 +392,7 @@ const getClientFeedback = async (req, res, next) => {
 const recordPersonalTrainingAttendance = async (req, res, next) => {
   try {
     const { memberProfileId } = req.params;
-    const { notes } = req.body;
+    const notes = req.body?.notes || null;
     const trainerUserId = req.user.id;
 
     // Verify trainer exists

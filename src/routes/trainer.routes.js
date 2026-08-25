@@ -16,12 +16,22 @@ const router = express.Router();
 // ALL ROUTES REQUIRE AUTHENTICATION
 router.use(authenticate);
 
-router.get('/me', trainerController.getMyProfile);
+router.get('/me', authorize('trainer'), trainerController.getMyProfile);
 
-router.get('/:id', validateGetTrainerById, trainerController.getTrainerById);
+router.get(
+  '/:id',
+  authorize('admin', 'reception', 'trainer'),
+  validateGetTrainerById,
+  trainerController.getTrainerById,
+);
 
 // Update trainer (owner or admin/reception)
-router.patch('/:id', validateUpdateTrainer, trainerController.updateTrainer);
+router.patch(
+  '/:id',
+  authorize('admin', 'reception', 'trainer'),
+  validateUpdateTrainer,
+  trainerController.updateTrainer,
+);
 
 // ADMIN/RECEPTION ONLY -
 router.get(
@@ -33,6 +43,7 @@ router.get(
 // Trainer schedule (owner or admin/reception)
 router.get(
   '/:id/schedule',
+  authorize('admin', 'reception', 'trainer'),
   validateGetTrainerSchedule,
   trainerController.getTrainerSchedule,
 );
@@ -40,6 +51,7 @@ router.get(
 // Trainer roster (owner or admin/reception)
 router.get(
   '/:id/roster',
+  authorize('admin', 'reception', 'trainer'),
   validateGetTrainerRoster,
   trainerController.getTrainerRoster,
 );
@@ -47,6 +59,7 @@ router.get(
 // Class roster (owner or admin/reception)
 router.get(
   '/:trainerId/classes/:classId/roster',
+  authorize('admin', 'reception', 'trainer'),
   validateClassRoster,
   trainerController.getClassRoster,
 );
@@ -55,6 +68,7 @@ router.get(
 router.get(
   '/:id/feedback',
   validateGetClientFeedback,
+  authorize('admin', 'reception', 'trainer'),
   trainerController.getClientFeedback,
 );
 

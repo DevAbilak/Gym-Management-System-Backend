@@ -287,20 +287,37 @@ const getTrainerRoster = async (trainerId) => {
       u.phone,
       ma.assigned_at,
       ma.is_active,
-      wt.name AS active_workout_plan,
       mp.fitness_goal,
       s.status AS subscription_status
     FROM member_assignments ma
     JOIN member_profiles mp ON ma.member_profile_id = mp.id
     JOIN users u ON mp.user_id = u.id
     LEFT JOIN subscriptions s ON s.member_profile_id = mp.id AND s.status = 'active'
-    LEFT JOIN workout_templates wt ON ma.workout_template_id = wt.id
     WHERE ma.trainer_id = ? AND ma.is_active = true
     ORDER BY u.first_name ASC
   `,
     [trainerId],
   );
   const roster = result.rows;
+
+  // Fetch template names from MongoDB for each assignment
+  const templateIds = roster
+    .map((r) => r.workout_template_id)
+    .filter((id) => id !== null);
+
+  if (templateIds.length > 0) {
+    const templates = await WorkoutTemplate.find({ _id: { $in: templateIds } });
+    const templateMap = templates.reduce((acc, t) => {
+      acc[t._id.toString()] = t.name;
+      return acc;
+    }, {});
+    // 3. Merge the names back into the roster
+    roster.forEach((r) => {
+      if (r.workout_template_id) {
+        r.active_workout_plan = templateMap[r.workout_template_id] || null;
+      }
+    });
+  }
 
   if (roster) {
     await redisClient.set(
@@ -542,7 +559,7 @@ const getClientFeedback = async (trainerId) => {
       r.rating_type,
       r.class_id,
       r.rating_stars,
-      r.rating_dimension,
+      r.rating_dimensions,
       r.comment,
       r.is_anonymous,
       r.created_at,
@@ -585,7 +602,7 @@ const recordPersonalTrainingAttendance = async (
       verified_by,
       notes
     )
-    VALUES (?, 'personal_training', NOW(), ?, ?)
+    VALUES (?, 'class_attendance', NOW(), ?, ?)
     RETURNING *
     `,
     [memberProfileId, trainerUserId, notes],
