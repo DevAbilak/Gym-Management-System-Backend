@@ -22,7 +22,7 @@ const isTrainerAssignedToMember = async (trainerUserId, memberProfileId) => {
 };
 
 // HELPER FUNCTION: Check if member exists
-const doesMemberExists = async (member_id) => {
+const doesMemberExists = async (member_id, res) => {
   const member = await memberService.getMemberById(member_id);
   if (!member) {
     return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
@@ -53,7 +53,7 @@ const saveHealthProfile = async (req, res, next) => {
   try {
     const payload = req.body;
 
-    doesMemberExists(payload.member_id);
+    doesMemberExists(payload.member_id, res);
 
     // save to mongoDB
     const metric = await healthService.saveHealthProfile(payload);
@@ -76,7 +76,7 @@ const getLatestMetrics = async (req, res, next) => {
   try {
     const { memberId } = req.params;
 
-    const member = doesMemberExists(memberId);
+    const member = doesMemberExists(memberId, res);
 
     permissionCheck(req, res, member.user_id, memberId);
 
@@ -108,7 +108,7 @@ const getMetricsHistory = async (req, res, next) => {
     const { memberId } = req.params;
     const { page = 1, limit = 20 } = req.query;
 
-    const member = doesMemberExists(memberId);
+    const member = doesMemberExists(memberId, res);
 
     permissionCheck(req, res, member.user_id, memberId);
 
@@ -141,7 +141,7 @@ const getMetricsByDateRange = async (req, res, next) => {
     const { memberId } = req.params;
     const { startDate, endDate } = req.query;
 
-    const member = doesMemberExists(memberId);
+    const member = doesMemberExists(memberId, res);
 
     permissionCheck(req, res, member.user_id, memberId);
 
