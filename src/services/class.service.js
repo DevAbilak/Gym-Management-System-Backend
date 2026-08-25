@@ -54,13 +54,13 @@ const createClass = async (payload) => {
     [
       trainer_id,
       name,
-      description,
-      category,
-      difficulty,
+      description || null,
+      category || null,
+      difficulty || null,
       capacity,
       start_time,
       end_time,
-      location,
+      location || null,
     ],
   );
 
