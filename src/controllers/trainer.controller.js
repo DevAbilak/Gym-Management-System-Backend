@@ -132,7 +132,7 @@ const deactivateTrainer = async (req, res, next) => {
       return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
     }
 
-    logger.warn({ trainerId: id, userId: req.user.id }, 'Trainer deactivated');
+    req.log.warn({ trainerId: id, userId: req.user.id }, 'Trainer deactivated');
     return sendSuccess(res, deleted, 'Trainer deactivated successfully', 200);
   } catch (error) {
     next(error);
@@ -150,7 +150,7 @@ const reactivateTrainer = async (req, res, next) => {
       return sendError(res, 'Trainer not found', ErrorCodes.NOT_FOUND, 404);
     }
 
-    logger.info({ trainerId: id, userId: req.user.id }, 'Trainer reactivated');
+    req.log.info({ trainerId: id, userId: req.user.id }, 'Trainer reactivated');
     return sendSuccess(
       res,
       reactivated,
