@@ -1,6 +1,6 @@
 const express = require('express');
 const templateController = require('../controllers/template.controller');
-const { authenticate } = require('../middleware/auth.middleware');
+const { authenticate, authorize } = require('../middleware/auth.middleware');
 const {
   validateCreateWorkoutTemplate,
   validateCreateMealPlan,
@@ -24,6 +24,7 @@ router.use(authenticate);
 
 router.post(
   '/workout',
+  authorize('admin', 'trainer'),
   validateCreateWorkoutTemplate,
   templateController.createWorkoutTemplate,
 );

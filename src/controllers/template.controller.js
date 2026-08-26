@@ -22,17 +22,20 @@ const createWorkoutTemplate = async (req, res, next) => {
     // If user is a trainer, they can only create templates for themselves
     // Admin can create for any trainer (already allowed)
     if (req.user.role === 'trainer' && req.user.id !== payload.trainer_id) {
-      trainerPermissionCheck(
-        req.user.id,
-        res,
-        payload.trainer_id,
-        'Trainers can only create templates for themselves.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(req.user.id);
+      if (trainer && trainer.id !== payload.trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only create templates for themselves.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
 
     const template = await templateService.createWorkoutTemplate(payload);
 
-    re.log.info(
+    req.log.info(
       { trainerId: payload.trainer_id, userId: req.user.id },
       'Workout template created',
     );
@@ -141,12 +144,15 @@ const getWorkoutTemplates = async (req, res, next) => {
 
     // if trainer_id is provided
     if (req.user.role === 'trainer') {
-      trainerPermissionCheck(
-        req.user.id,
-        res,
-        trainer_id,
-        'Trainers can only view their own templates.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(req.user.id);
+      if (trainer && trainer.id !== trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only view their own templates.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
 
     // member can view public templates only
@@ -187,12 +193,15 @@ const updateWorkoutTemplate = async (req, res, next) => {
 
     // Permission check
     if (req.user.role === 'trainer') {
-      trainerPermissionCheck(
-        req.user.id,
-        res,
-        existing.trainer_id,
-        'Trainers can only update their own templates.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(req.user.id);
+      if (trainer && trainer.id !== existing.trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only update their own templates.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
 
     const updated = await templateService.updateWorkoutTemplate(id, updates);
@@ -233,12 +242,15 @@ const deleteWorkoutTemplate = async (req, res, next) => {
 
     // Permission check
     if (req.user.role === 'trainer') {
-      trainerPermissionCheck(
-        req.user.id,
-        res,
-        existing.trainer_id,
-        'Trainers can only delete their own templates.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(req.user.id);
+      if (trainer && trainer.id !== existing.trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only delete their own templates.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
 
     const result = await templateService.deleteWorkoutTemplate(id);
