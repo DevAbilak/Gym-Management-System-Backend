@@ -21,17 +21,8 @@ const isTrainerAssignedToMember = async (trainerUserId, memberProfileId) => {
   return result.rows.length > 0;
 };
 
-// HELPER FUNCTION: Check if member exists
-const doesMemberExists = async (member_id, res) => {
-  const member = await memberService.getMemberById(member_id);
-  if (!member) {
-    return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
-  }
-  return member;
-};
-
 // HELPER FUNCTION: Permission check
-const permissionCheck = async (req, res, userId, memberId) => {
+const permissionCheck = async (req, userId, memberId) => {
   const isOwn = req.user.role === 'member' && req.user.id === userId;
   const isAdminReception =
     req.user.role === 'admin' || req.user.role === 'reception';
@@ -39,20 +30,20 @@ const permissionCheck = async (req, res, userId, memberId) => {
     req.user.role === 'trainer' &&
     (await isTrainerAssignedToMember(req.user.id, memberId));
 
-  if (!isOwn || !isAdminReception || !isAssignedTrainer) {
-    return sendError(
-      res,
-      'Access denied. You can only view your own health metrics or assigned members.',
-      ErrorCodes.FORBIDDEN,
-      403,
-    );
+  if (isOwn || isAdminReception || isAssignedTrainer) {
+    return true;
   }
+  return false;
 };
 
 const saveHealthProfile = async (req, res, next) => {
   try {
     const payload = req.body;
-    const member = doesMemberExists(payload.member_id, res);
+
+    const member = await memberService.getMemberById(payload.member_id);
+    if (!member) {
+      return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
+    }
 
     // permission check
     const isOwn = req.user.role === 'member' && req.user.id === member.id;
@@ -89,9 +80,21 @@ const getLatestMetrics = async (req, res, next) => {
   try {
     const { memberId } = req.params;
 
-    const member = doesMemberExists(memberId, res);
+    const member = await memberService.getMemberById(memberId);
+    if (!member) {
+      return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
+    }
 
-    permissionCheck(req, res, member.user_id, memberId);
+    const isAllowed = await permissionCheck(req, member.user_id, memberId);
+
+    if (!isAllowed) {
+      return sendError(
+        res,
+        'Access denied. You can only view your own health metrics or assigned members.',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
 
     // fetch from MongoDB
     const metrics = await healthService.getLatestMetrics(memberId);
@@ -121,9 +124,20 @@ const getMetricsHistory = async (req, res, next) => {
     const { memberId } = req.params;
     const { page = 1, limit = 20 } = req.query;
 
-    const member = doesMemberExists(memberId, res);
+    const member = await memberService.getMemberById(memberId);
+    if (!member) {
+      return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
+    }
 
-    permissionCheck(req, res, member.user_id, memberId);
+    const isAllowed = await permissionCheck(req, member.user_id, memberId);
+    if (!isAllowed) {
+      return sendError(
+        res,
+        'Access denied. You can only view your own health metrics or assigned members.',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
 
     const history = await healthService.getMetricsHistory(
       memberId,
@@ -154,9 +168,21 @@ const getMetricsByDateRange = async (req, res, next) => {
     const { memberId } = req.params;
     const { startDate, endDate } = req.query;
 
-    const member = doesMemberExists(memberId, res);
+    const member = await memberService.getMemberById(memberId);
+    if (!member) {
+      return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
+    }
 
-    permissionCheck(req, res, member.user_id, memberId);
+    const isAllowed = await permissionCheck(req, member.user_id, memberId);
+
+    if (!isAllowed) {
+      return sendError(
+        res,
+        'Access denied. You can only view your own health metrics or assigned members.',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
 
     const metrics = await healthService.getMetricsBYDateRange(
       memberId,

@@ -120,6 +120,12 @@ const getMetricsHistory = async (memberId, limit = 30, skip = 0) => {
 const getMetricsBYDateRange = async (memberId, startDate, endDate) => {
   const cacheKey = `health:range:${memberId}:${startDate}:${endDate}`;
 
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Set end date to 23:59:59.999 to include the entire day
+  end.setHours(23, 59, 59, 999);
+
   const cached = await redisClient.get(cacheKey);
   if (cached) {
     return JSON.parse(cached);
@@ -129,8 +135,8 @@ const getMetricsBYDateRange = async (memberId, startDate, endDate) => {
     .find({
       member_id: memberId,
       recorded_at: {
-        $gte: new Date(startDate),
-        $lte: newDate(endDate),
+        $gte: start,
+        $lte: end,
       },
     })
     .sort({ recorded_at: 1 });
