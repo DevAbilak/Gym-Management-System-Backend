@@ -51,7 +51,7 @@ const saveHealthProfile = async (payload) => {
   const bmi = calculateBMI(weight_kg, height_cm);
 
   // create mongodb document
-  const metric = new HealthMetric({
+  const metric = new healthMetric({
     member_id,
     weight_kg,
     height_cm,

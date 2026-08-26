@@ -52,8 +52,21 @@ const permissionCheck = async (req, res, userId, memberId) => {
 const saveHealthProfile = async (req, res, next) => {
   try {
     const payload = req.body;
+    const member = doesMemberExists(payload.member_id, res);
 
-    doesMemberExists(payload.member_id, res);
+    // permission check
+    const isOwn = req.user.role === 'member' && req.user.id === member.id;
+    const isAdminReception =
+      req.user.role === 'admin' || req.user.role === 'reception';
+
+    if (!isOwn || !isAdminReception) {
+      return sendError(
+        res,
+        'Access denied. You can only save your own health metrics.',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
 
     // save to mongoDB
     const metric = await healthService.saveHealthProfile(payload);
