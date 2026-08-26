@@ -187,7 +187,7 @@ const getAllWorkoutTemplates = async (page = 1, limit = 20) => {
   }
 
   const skip = (page - 1) * limit;
-  const [data, total] = await promise.all([
+  const [data, total] = await Promise.all([
     WorkoutTemplate.find().sort({ created_at: -1 }).limit(limit).skip(skip),
     WorkoutTemplate.countDocuments(),
   ]);
