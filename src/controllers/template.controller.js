@@ -2,14 +2,6 @@ const templateService = require('../services/templete.service');
 const trainerService = require('../services/trainer.service');
 const { sendError, sendSuccess, ErrorCodes } = require('../utils/response');
 
-// HELPER FUNCTION: trainer permission check
-const trainerPermissionCheck = async (userId, res, trainerId, message) => {
-  const trainer = await trainerService.getTrainerByUserId(userId);
-  if (trainer && trainer.id !== trainerId) {
-    return sendError(res, message, ErrorCodes.FORBIDDEN, 403);
-  }
-};
-
 // ============================================================
 // WORKOUT TEMPLATES
 // ============================================================
@@ -284,12 +276,15 @@ const createMealPlan = async (req, res, next) => {
 
     // Permission check
     if (req.user.role === 'trainer') {
-      trainerPermissionCheck(
-        req.user.id,
-        res,
-        payload.trainer_id,
-        'Trainers can only create meal plans for themselves.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(req.user.id);
+      if (trainer && trainer.id !== payload.trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only create meal plans for themselves.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
 
     const plan = await templateService.createMealPlan(payload);
@@ -322,12 +317,15 @@ const getMealPlanById = async (req, res, next) => {
     // Admin/Reception can view anything
     // Trainers can view their own
     if (req.user.role === 'trainer') {
-      trainerPermissionCheck(
-        req.user.id,
-        res,
-        plan.trainer_id,
-        'Trainers can only view their own meal plans.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(req.user.id);
+      if (trainer && trainer.id !== plan.trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only view their own meal plans.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
     return sendSuccess(res, plan, 'Meal plan retrieved successfully', 200);
   } catch (error) {
@@ -358,13 +356,15 @@ const getMealPlans = async (req, res, next) => {
 
     // Permission check for specific trainer
     if (req.user.role === 'trainer') {
-      trainerPermissionCheck(
-        req,
-        user.id,
-        res,
-        trainer_id,
-        'Trainers can only view their own meal plans.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(req.user.id);
+      if (trainer && trainer.id !== trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only view their own meal plans.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
 
     // Members, Admin/Reception can view any trainer's meal plans
@@ -391,12 +391,15 @@ const updateMealPlan = async (req, res, next) => {
 
     // Permission check
     if (req.user.role === 'trainer') {
-      trainerPermissionCheck(
-        req.user.id,
-        res,
-        existing.trainer_id,
-        'Trainers can only update their own meal plans.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(req.user.id);
+      if (trainer && trainer.id !== existing.trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only update their own meal plans.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
 
     const updated = await templateService.updateMealPlan(id, updates);
@@ -425,15 +428,18 @@ const deleteMealPlan = async (req, res, next) => {
     }
 
     if (req.user.role === 'trainer') {
-      trainerPermissionCheck(
-        req.user.id,
-        res,
-        existing.trainer_id,
-        'Trainers can only delete their own meal plans.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(req.user.id);
+      if (trainer && trainer.id !== existing.trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only delete their own meal plans.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
 
-    const result = await trainerService.deleteMealPlan(id);
+    const result = await templateService.deleteMealPlan(id);
 
     req.log.warn(
       { planId: id, trainerId: existing.trainer_id, userId: req.user.id },
