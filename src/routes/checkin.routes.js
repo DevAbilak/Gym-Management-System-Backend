@@ -39,7 +39,7 @@ router.get(
 
 // Override check-in
 router.post(
-  '/:uniqueId/override',
+  '/override/:uniqueId',
   authorize('admin', 'reception'),
   validateOverrideCheckIn,
   checkinController.overrideCheckIn,

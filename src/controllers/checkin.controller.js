@@ -1,4 +1,5 @@
 const checkinService = require('../services/checkin.service');
+const memberService = require('../services/member.service');
 const { sendSuccess, sendError, ErrorCodes } = require('../utils/response');
 
 // GET MEMBER BY UNIQUE MEMBER ID
@@ -39,7 +40,7 @@ const checkIn = async (req, res, next) => {
     }
 
     if (
-      error.message === 'Subscription is not active' ||
+      error.message === 'Member does not have an active subscription' ||
       error.message === 'Account is deactivated'
     ) {
       return sendError(res, error.message, ErrorCodes.FORBIDDEN, 403);
@@ -90,7 +91,7 @@ const getCheckInHistory = async (req, res, next) => {
     const { limit } = req.query;
 
     // check if member exists
-    const member = await getMemberById(memberId);
+    const member = await memberService.getMemberById(memberId);
     if (!member) {
       return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
     }
