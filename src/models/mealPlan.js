@@ -49,7 +49,6 @@ const mealPlanSchema = new mongoose.Schema(
     trainer_id: {
       type: String,
       required: [true, 'trainer_id (PostgreSQL UUID) is required'],
-      index: true,
       description: 'References trainers.id in PostgreSQL',
     },
     name: {

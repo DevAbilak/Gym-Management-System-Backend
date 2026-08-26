@@ -5,7 +5,6 @@ const notificationSchema = new mongoose.Schema(
     user_id: {
       type: String,
       required: [true, 'user_id (PostgreSQL UUID) is required'],
-      index: true,
       description: 'References users.id in PostgreSQL',
     },
     type: {

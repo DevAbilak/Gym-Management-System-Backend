@@ -5,7 +5,6 @@ const healthMetricSchema = new mongoose.Schema(
     member_id: {
       type: String,
       required: [true, 'member_id (PostgreSQL UUID) is required'],
-      index: true,
       description: 'References member_profiles.id in PostgreSQL',
     },
     height_cm: {
