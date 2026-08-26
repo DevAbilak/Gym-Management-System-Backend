@@ -44,6 +44,15 @@ const createClass = async (payload) => {
 
   validateClassTimes(start_time, end_time);
 
+  // Check if trainer exists
+  const trainerCheck = await knex.raw('SELECT id FROM trainers WHERE id = ?', [
+    trainer_id,
+  ]);
+
+  if (trainerCheck.rows.length === 0) {
+    throw new Error(`Trainer not found with ID: ${trainer_id}`);
+  }
+
   const result = await knex.raw(
     `
     INSERT INTO classes (

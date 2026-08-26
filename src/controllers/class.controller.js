@@ -49,6 +49,9 @@ const createClass = async (req, res, next) => {
 
     return sendSuccess(res, newClass, 'Class created successfully', 201);
   } catch (error) {
+    if (error.message && error.message.startsWith('Trainer not found')) {
+      return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
+    }
     if (error.message === 'end_time must be after start_time') {
       return sendError(res, error.message, ErrorCodes.VALIDATION_ERROR, 400);
     }
