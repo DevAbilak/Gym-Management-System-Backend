@@ -84,7 +84,7 @@ router.post(
 
 // Workout Templates
 router.get(
-  '/trainers/:trainerId/templates',
+  '/:trainerId/templates',
   authorize('trainer', 'admin', 'reception'),
   validateTrainerIdParam,
   trainerController.getWorkoutTemplates,
@@ -92,7 +92,7 @@ router.get(
 
 // Meal Plans
 router.get(
-  '/trainers/:trainerId/meal-plans',
+  '/:trainerId/meal-plans',
   authorize('trainer', 'admin', 'reception'),
   validateTrainerIdParam,
   trainerController.getMealPlans,
@@ -100,7 +100,7 @@ router.get(
 
 // Assign Plan
 router.post(
-  '/trainers/:trainerId/assign-plan',
+  '/:trainerId/assign-plan',
   authorize('trainer', 'admin', 'reception'),
   validateAssignPlan,
   trainerController.assignPlan,

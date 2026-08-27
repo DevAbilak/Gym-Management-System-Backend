@@ -172,7 +172,7 @@ const getWorkoutTemplateByTrainer = async (trainerId, filters = {}) => {
   // remove duplicates if a template is both trainer's and public
   const seen = new Set();
   const templates = result.filter((template) => {
-    const key = template._id.tostring();
+    const key = template._id.toString();
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
