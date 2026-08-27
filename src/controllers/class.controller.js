@@ -2,25 +2,6 @@ const classService = require('../services/class.service');
 const trainerService = require('../services/trainer.service');
 const { sendError, ErrorCodes, sendSuccess } = require('../utils/response');
 
-// HELPER FUNCTION: Checking user permission
-const permissionCheck = async (userId, trainerId, res, message) => {
-  const trainer = await trainerService.getTrainerByUserId(userId);
-  console.log(trainer);
-
-  if (!trainer) {
-    return sendError(
-      res,
-      'Trainer profile not found for this user',
-      ErrorCodes.NOT_FOUND,
-      404,
-    );
-  }
-
-  if (trainer.id !== trainerId) {
-    return sendError(res, message, ErrorCodes.FORBIDDEN, 403);
-  }
-};
-
 const listClasses = async (req, res, next) => {
   try {
     const { date, discipline, trainer_id, page, limit } = req.query;
@@ -70,12 +51,25 @@ const createClass = async (req, res, next) => {
     const userRole = req.user.role;
 
     if (userRole === 'trainer') {
-      return permissionCheck(
-        userId,
-        payload.trainer_id,
-        res,
-        'Trainers can only create classes for themselves.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(userId);
+
+      if (!trainer) {
+        return sendError(
+          res,
+          'Trainer profile not found for this user',
+          ErrorCodes.NOT_FOUND,
+          404,
+        );
+      }
+
+      if (trainer.id !== payload.trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only create classes for themselves.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
 
     const newClass = await classService.createClass(payload);
@@ -117,15 +111,26 @@ const updateClass = async (req, res, next) => {
       return sendError(res, 'Class not found', ErrorCodes.NOT_FOUND, 404);
     }
 
-    console.log(userRole);
-
     if (userRole === 'trainer') {
-      return permissionCheck(
-        userId,
-        existingClass.trainer_id,
-        res,
-        'Trainers can only update their own classes.',
-      );
+      const trainer = await trainerService.getTrainerByUserId(userId);
+
+      if (!trainer) {
+        return sendError(
+          res,
+          'Trainer profile not found for this user',
+          ErrorCodes.NOT_FOUND,
+          404,
+        );
+      }
+
+      if (trainer.id !== existingClass.trainer_id) {
+        return sendError(
+          res,
+          'Trainers can only update their own classes.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
     }
 
     const updated = await classService.updateClass(id, updates);

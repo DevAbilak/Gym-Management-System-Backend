@@ -1,5 +1,7 @@
 const knex = require('../db/db');
 const crypto = require('crypto');
+const notificationService = require('./notification.service');
+const memberService = require('./member.service');
 const { invalidateTrainerScheduleCache } = require('./trainer.service');
 const { redisClient } = require('../config/redis');
 
@@ -27,7 +29,7 @@ const bookClass = async (memberProfileId, classId) => {
     const existingBooking = await trx.raw(
       `
       SELECT id, status FROM class_bookings
-      WHERE member_profile_id = ? AND class_id = ?
+      WHERE member_profile_id = ? AND class_id = ? AND status IN ('confirmed', 'waitlisted')
       `,
       [memberProfileId, classId],
     );
@@ -79,9 +81,28 @@ const bookClass = async (memberProfileId, classId) => {
     bookingId = insertResult.rows[0].id;
 
     await trx.commit();
+
+    // Send notification to the member
+    try {
+      const member = await memberService.getMemberById(memberProfileId);
+      if (member) {
+        await notificationService.createNotification({
+          user_id: member.user_id,
+          type: 'booking_confirmed',
+          title: 'Booking Confirmed!',
+          message: `You have successfully booked ${updatedClass.rows[0].name} on ${new Date(updatedClass.rows[0].start_time).toLocaleDateString()}.`,
+          link: `/bookings/${bookingId}`,
+          priority: 'normal',
+          data: { classId: classId, bookingId: bookingId },
+        });
+      }
+    } catch (notifError) {
+      req.log.error('Failed to send notification:', notifError.message);
+    }
+
     await invalidateBookingCache(bookingId, memberProfileId);
     await invalidateTrainerScheduleCache(updatedClass.trainer_id);
-    await redisClient.del(`trainer:class:${classId}:roster`);
+    await redisClient.del(`trainer:class:${updatedClass.id}:roster`);
 
     return {
       status: 'confirmed',
@@ -105,7 +126,8 @@ const cancelBooking = async (bookingId) => {
         cb.class_id,
         cb.member_profile_id,
         cb.status,
-        c.start_time
+        c.start_time,
+        c.name AS class_name
       FROM class_bookings cb
       JOIN classes c ON cb.class_id = c.id
       WHERE cb.id = ?
@@ -189,9 +211,31 @@ const cancelBooking = async (bookingId) => {
 
     await trx.commit();
 
+    // Notify the member about cancellation
+    try {
+      const member = await memberService.getMemberById(
+        booking.member_profile_id,
+      );
+      if (member) {
+        await notificationService.createNotification({
+          user_id: member.user_id,
+          type: 'booking_cancelled',
+          title: 'Booking Cancelled',
+          message: `Your booking for ${booking.class_name} has been cancelled.`,
+          link: '/bookings',
+          priority: 'normal',
+          data: { bookingId: bookingId },
+        });
+      }
+    } catch (notifError) {
+      req.log.error(
+        'Failed to send cancellation notification:',
+        notifError.message,
+      );
+    }
+
     await invalidateBookingCache(bookingId, booking.member_profile_id);
-    await invalidateTrainerScheduleCache(classTrainerId);
-    await redisClient.del(`trainer:class:${classId}:roster`);
+    await redisClient.del(`trainer:class:${booking.class_id}:roster`);
     return {
       message:
         waitlistResult.rows.length > 0
@@ -300,9 +344,31 @@ const rescheduleBooking = async (bookingId, newClassId) => {
 
     await trx.commit();
 
+    // Notify the member about reschedule
+    try {
+      const member = await memberService.getMemberById(
+        booking.member_profile_id,
+      );
+      if (member) {
+        await notificationService.createNotification({
+          user_id: member.user_id,
+          type: 'booking_confirmed',
+          title: 'Booking Rescheduled',
+          message: `Your booking has been moved to a new class on ${new Date(newClass.start_time).toLocaleDateString()}.`,
+          link: `/bookings/${newBookingId}`,
+          priority: 'normal',
+          data: { oldClassId: booking.class_id, newClassId: newClassId },
+        });
+      }
+    } catch (notifError) {
+      req.log.error(
+        'Failed to send reschedule notification:',
+        notifError.message,
+      );
+    }
+
     await invalidateBookingCache(bookingId, booking.member_profile_id);
     await invalidateBookingCache(newBookingId, booking.member_profile_id);
-    await invalidateTrainerScheduleCache(classTrainerId);
     await redisClient.del(`trainer:class:${classId}:roster`);
 
     return { message: 'Booking rescheduled successfully' };

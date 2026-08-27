@@ -4,19 +4,15 @@ const { getMemberById } = require('../services/member.service');
 const { getClassById } = require('../services/class.service');
 
 // HELPER FUNCTION: PERMISSION CHECK
-const permissionCheck = (req, message, id) => {
+const permissionCheck = async (req, id) => {
   const isOwn = req.user.role === 'member' && req.user.id === id;
   const isAdminReception =
     req.user.role === 'admin' || req.user.role === 'reception';
 
-  if (!isOwn && !isAdminReception) {
-    return sendError(
-      res,
-      `Access denied. You can only ${message}.`,
-      ErrorCodes.FORBIDDEN,
-      403,
-    );
+  if (isOwn || isAdminReception) {
+    return true;
   }
+  return false;
 };
 
 const bookClass = async (req, res, next) => {
@@ -76,7 +72,16 @@ const cancelBooking = async (req, res, next) => {
       return sendError(res, 'Booking not found', ErrorCodes.NOT_FOUND, 404);
     }
 
-    permissionCheck(req, 'cancel your own bookings', booking.member_user_id);
+    const isAllowed = await permissionCheck(req, booking.member_user_id);
+
+    if (!isAllowed) {
+      return sendError(
+        res,
+        'Access denied. You can only cancel your own bookings.',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
 
     // cancel the booking
     const result = await bookingService.cancelBooking(id);
@@ -111,11 +116,16 @@ const rescheduleBooking = async (req, res, next) => {
     }
 
     // permission check
-    permissionCheck(
-      req,
-      'reschedule your own bookings',
-      booking.member_user_id,
-    );
+    const isAllowed = await permissionCheck(req, booking.member_user_id);
+
+    if (!isAllowed) {
+      return sendError(
+        res,
+        'Access denied. You can only reschedule your own bookings.',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
 
     const newClass = await getClassById(new_class_id);
     if (!newClass) {
@@ -172,7 +182,16 @@ const getBookingByMember = async (req, res, next) => {
       return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
     }
 
-    permissionCheck(req, 'view your own booking history', member.user_id);
+    const isAllowed = await permissionCheck(req, member.user_id);
+
+    if (!isAllowed) {
+      return sendError(
+        res,
+        'Access denied. You can only view your own booking history.',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
 
     const bookings = await bookingService.getBookingByMember(memberProfileId);
     return sendSuccess(
@@ -197,7 +216,16 @@ const getBookingById = async (req, res, next) => {
       return sendError(res, 'Booking not found', ErrorCodes.NOT_FOUND, 404);
     }
 
-    permissionCheck(req, 'view your own bookings', booking.member_user_id);
+    const isAllowed = await permissionCheck(req, booking.member_user_id);
+
+    if (!isAllowed) {
+      return sendError(
+        res,
+        'Access denied. You can only view your own bookings.',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
 
     return sendSuccess(res, booking, 'Booking retrieved successfully', 200);
   } catch (error) {
