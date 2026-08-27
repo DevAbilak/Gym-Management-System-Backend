@@ -80,6 +80,13 @@ const invalidateMealCache = async (trainerId, planId = null) => {
   await Promise.all(promises);
 };
 
+const invalidateAllRosterCaches = async () => {
+  const keys = await redisClient.keys('trainer:roster:*');
+  if (keys.length > 0) {
+    await redisClient.del(keys);
+  }
+};
+
 // ============================================================
 // WORKOUT TEMPLATES
 // ============================================================
@@ -261,6 +268,7 @@ const deleteWorkoutTemplate = async (id) => {
   }
 
   await invalidateWorkoutCache(trainerId, id);
+  await invalidateAllRosterCaches();
 
   return { message: 'Workout template deleted successfully' };
 };
@@ -435,6 +443,7 @@ const deleteMealPlan = async (id) => {
   await MealPlan.findByIdAndDelete(id);
 
   await invalidateMealCache(trainerId, id);
+  await invalidateAllRosterCaches();
 
   return { message: 'Meal plan deleted successfully' };
 };

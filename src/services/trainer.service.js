@@ -554,6 +554,8 @@ const assignPlan = async ({
 
     await trx.commit();
 
+    await redisClient.del(`trainer:roaster:${trainerId}`);
+
     try {
       let planNameParts = [];
       if (workoutTemplateId) {
