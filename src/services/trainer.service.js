@@ -1,5 +1,8 @@
 const knex = require('../db/db');
 const { redisClient } = require('../config/redis');
+const memberService = require('./member.service');
+const notificationService = require('./notification.service');
+const { MealPlan, WorkoutTemplate } = require('../models/index');
 
 const TRAINER_CACHE_TTL = 300; // 5 minutes
 const SCHEDULE_CACHE_TTL = 120; // 2 minutes
@@ -304,30 +307,49 @@ const getTrainerRoster = async (trainerId) => {
   const templateIds = roster
     .map((r) => r.workout_template_id)
     .filter((id) => id !== null);
+  const planIds = removeAllListeners
+    .map((r) => r.meal_plan_id)
+    .filter((id) => id !== null);
+
+  let templateMap = {};
+  let planMap = {};
 
   if (templateIds.length > 0) {
     const templates = await WorkoutTemplate.find({ _id: { $in: templateIds } });
-    const templateMap = templates.reduce((acc, t) => {
+    templateMap = templates.reduce((acc, t) => {
       acc[t._id.toString()] = t.name;
       return acc;
     }, {});
-    // 3. Merge the names back into the roster
-    roster.forEach((r) => {
-      if (r.workout_template_id) {
-        r.active_workout_plan = templateMap[r.workout_template_id] || null;
-      }
-    });
   }
 
-  if (roster) {
+  if (planIds.length > 0) {
+    const plans = await MealPlan.find({ _id: { $in: planIds } });
+    planMap = plans.reduce((acc, p) => {
+      acc[p._id.toString()] = p.name;
+      return acc;
+    }, {});
+  }
+
+  // Merge the names back into the roster
+  const enrichedRoster = roster.map((r) => {
+    return {
+      ...r,
+      active_workout_plan: r.workout_template_id
+        ? templateMap[r.workout_template_id] || null
+        : null,
+      active_meal_plan: r.meal_plan_id ? planMap[r.meal_plan_id] || null : null,
+    };
+  });
+
+  if (enrichedRoster) {
     await redisClient.set(
       cacheKey,
-      JSON.stringify(roster),
+      JSON.stringify(enrichedRoster),
       'EX',
       ROSTER_CACHE_TTL,
     );
   }
-  return roster;
+  return enrichedRoster;
 };
 
 // DELETE TRAINER (Admin only)
@@ -439,108 +461,134 @@ const getClassRoster = async (trainerId, classId) => {
   return roster;
 };
 
-// // GET TRAINER WORKOUT TEMPLATES
-// const getWorkoutTemplates = async (trainerId) => {
-//   const result = await knex.raw(
-//     `
-//     SELECT
-//       id,
-//       trainer_id,
-//       name,
-//       description,
-//       difficulty,
-//       goal_type,
-//       duration_weeks,
-//       is_public,
-//       created_at,
-//       updated_at
-//     FROM workout_templates
-//     WHERE trainer_id = ?
-//        OR is_public = true
-//     ORDER BY created_at DESC
-//     `,
-//     [trainerId],
-//   );
+// GET TRAINER WORKOUT TEMPLATES
+const getWorkoutTemplates = async (trainerId) => {
+  const templateService = require('./templete.service');
+  return await templateService.getWorkoutTemplateByTrainer(trainerId, {
+    include_public: true,
+  });
+};
 
-//   return result.rows;
-// };
-
-// // GET TRAINER MEAL PLANS
-// const getMealPlans = async (trainerId) => {
-//   const result = await knex.raw(
-//     `
-//     SELECT
-//       id,
-//       trainer_id,
-//       name,
-//       description,
-//       goal_type,
-//       calories_target,
-//       protein_g,
-//       carbs_g,
-//       fat_g,
-//       created_at,
-//       updated_at
-//     FROM meal_plans
-//     WHERE trainer_id = ?
-//     ORDER BY created_at DESC
-//     `,
-//     [trainerId],
-//   );
-
-//   return result.rows;
-// };
+// GET TRAINER MEAL PLANS
+const getMealPlans = async (trainerId) => {
+  const mealPlanService = require('./templete.service');
+  return await mealPlanService.getMealPlansByTrainer(trainerId);
+};
 
 // ASSIGN WORKOUT / MEAL PLAN TO MEMBER
-// const assignPlan = async ({
-//   memberProfileId,
-//   trainerId,
-//   workoutTemplateId = null,
-//   mealPlanId = null,
-//   notes = null,
-// }) => {
-//   if (!workoutTemplateId && !mealPlanId) {
-//     throw new Error("Workout template or meal plan is required");
-//   }
+const assignPlan = async ({
+  memberProfileId,
+  trainerId,
+  workoutTemplateId = null,
+  mealPlanId = null,
+  notes = null,
+}) => {
+  if (!workoutTemplateId && !mealPlanId) {
+    throw new Error(
+      'Either workout_template_id or meal_plan_id must be provided.',
+    );
+  }
 
-//   const trx = await knex.transaction();
+  const member = await memberService.getMemberById(memberProfileId);
+  if (!member) {
+    throw new Error('Member not found.');
+  }
 
-//   try {
-//     // 1. Deactivate any existing active assignments for this member + trainer
-//     await trx.raw(
-//       `
-//       UPDATE member_assignments
-//       SET is_active = false, updated_at = NOW()
-//       WHERE member_profile_id = ? AND trainer_id = ? AND is_active = true
-//       `,
-//       [memberProfileId, trainerId],
-//     );
+  const trainer = await getTrainerById(trainerId);
+  if (!trainer) {
+    throw new Error('Trainer not found.');
+  }
 
-//     // 2. Insert the new assignment
-//     const result = await trx.raw(
-//       `
-//       INSERT INTO member_assignments (
-//         member_profile_id,
-//         trainer_id,
-//         workout_template_id,
-//         meal_plan_id,
-//         assigned_at,
-//         is_active,
-//         notes
-//       )
-//       VALUES (?, ?, ?, ?, NOW(), true, ?)
-//       RETURNING *
-//       `,
-//       [memberProfileId, trainerId, workoutTemplateId, mealPlanId, notes],
-//     );
+  if (workoutTemplateId) {
+    const template = await WorkoutTemplate.findById(workoutTemplateId);
+    if (!template) {
+      throw new Error('Workout template not found.');
+    }
+    // Ensure the template belongs to this trainer or is public
+    if (template.trainer_id !== trainerId && !template.is_public) {
+      throw new Error(
+        'You do not have permission to assign this workout template.',
+      );
+    }
+  }
 
-//     await trx.commit();
-//     return result.rows[0];
-//   } catch (error) {
-//     await trx.rollback();
-//     throw error;
-//   }
-// };
+  if (mealPlanId) {
+    const plan = await MealPlan.findById(mealPlanId);
+    if (!plan) {
+      throw new Error('Meal plan not found.');
+    }
+    if (plan.trainer_id !== trainerId) {
+      throw new Error('You do not have permission to assign this meal plan.');
+    }
+  }
+
+  const trx = await knex.transaction();
+
+  try {
+    // Deactivate any previous active assignment for this member (any trainer)
+    await trx.raw(
+      `
+      UPDATE member_assignments
+      SET is_active = false, updated_at = NOW()
+      WHERE member_profile_id = ? AND is_active = true
+      `,
+      [memberProfileId],
+    );
+
+    const result = await trx.raw(
+      `
+      INSERT INTO member_assignments (
+        member_profile_id,
+        trainer_id,
+        workout_template_id,
+        meal_plan_id,
+        assigned_at,
+        is_active,
+        notes
+      )
+      VALUES (?, ?, ?, ?, NOW(), true, ?)
+      RETURNING *
+      `,
+      [memberProfileId, trainerId, workoutTemplateId, mealPlanId, notes],
+    );
+
+    await trx.commit();
+
+    try {
+      let planNameParts = [];
+      if (workoutTemplateId) {
+        const template = await WorkoutTemplate.findById(workoutTemplateId);
+        if (template) planNameParts.push(template.name);
+      }
+      if (mealPlanId) {
+        const plan = await MealPlan.findById(mealPlanId);
+        if (plan) planNameParts.push(plan.name);
+      }
+
+      let planName = planNameParts.join(' & ') || 'a new plan';
+
+      await notificationService.createNotification({
+        user_id: member.user_id,
+        type: 'plan_assigned',
+        title: 'New Plan Assigned!',
+        message: `Your trainer has assigned you : ${planName}.`,
+        link: '/my-plans',
+        priority: 'normal',
+        data: { trainerId, assignmentId: result.rows[0].id },
+      });
+    } catch (notifError) {
+      req.log.error(
+        'Failed to send assignment notification:',
+        notifError.message,
+      );
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    await trx.rollback();
+    throw error;
+  }
+};
 
 // GET CLIENT FEEDBACK
 const getClientFeedback = async (trainerId) => {
@@ -621,10 +669,9 @@ module.exports = {
   getTrainerRoster,
   deactivateTrainer,
   reactivateTrainer,
-  // getMemberHealthProfile,
-  // getWorkoutTemplates,
-  // getMealPlans,
-  // assignPlan,
+  getWorkoutTemplates,
+  getMealPlans,
+  assignPlan,
   getClientFeedback,
   recordPersonalTrainingAttendance,
   invalidateTrainerScheduleCache,

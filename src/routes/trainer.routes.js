@@ -9,6 +9,8 @@ const {
   validateGetClientFeedback,
   validateClassRoster,
   validatePersonalTrainingAttendance,
+  validateTrainerIdParam,
+  validateAssignPlan,
 } = require('../middleware/validators.middleware');
 
 const router = express.Router();
@@ -78,6 +80,30 @@ router.post(
   authorize('trainer'),
   validatePersonalTrainingAttendance,
   trainerController.recordPersonalTrainingAttendance,
+);
+
+// Workout Templates
+router.get(
+  '/trainers/:trainerId/templates',
+  authorize('trainer', 'admin', 'reception'),
+  validateTrainerIdParam,
+  trainerController.getWorkoutTemplates,
+);
+
+// Meal Plans
+router.get(
+  '/trainers/:trainerId/meal-plans',
+  authorize('trainer', 'admin', 'reception'),
+  validateTrainerIdParam,
+  trainerController.getMealPlans,
+);
+
+// Assign Plan
+router.post(
+  '/trainers/:trainerId/assign-plan',
+  authorize('trainer', 'admin', 'reception'),
+  validateAssignPlan,
+  trainerController.assignPlan,
 );
 
 module.exports = router;

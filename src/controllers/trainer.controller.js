@@ -299,52 +299,68 @@ const getClassRoster = async (req, res, next) => {
 };
 
 // GET WORKOUT TEMPLATES
-// const getWorkoutTemplates = async (req, res, next) => {
-//   try {
-//     const trainerId = req.params.trainerId;
+const getWorkoutTemplates = async (req, res, next) => {
+  try {
+    const trainerId = req.params.trainerId;
 
-//     const result = await trainerService.getWorkoutTemplates(trainerId);
+    const result = await trainerService.getWorkoutTemplates(trainerId);
 
-//     res.status(200).json(result);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    return sendSuccess(
+      res,
+      result,
+      'Workout templates retrieved successfully',
+      200,
+    );
+  } catch (error) {
+    next(error);
+  }
+};
 
 // GET MEAL PLANS
-// const getMealPlans = async (req, res, next) => {
-//   try {
-//     const trainerId = req.params.trainerId;
+const getMealPlans = async (req, res, next) => {
+  try {
+    const trainerId = req.params.trainerId;
 
-//     const result = await trainerService.getMealPlans(trainerId);
+    const result = await trainerService.getMealPlans(trainerId);
 
-//     res.status(200).json(result);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    return sendSuccess(res, result, 'Meal plans retrieved successfully', 200);
+  } catch (error) {
+    next(error);
+  }
+};
 
 // ASSIGN PLAN
-// const assignPlan = async (req, res, next) => {
-//   try {
-//     const trainerId = req.params.trainerId;
+const assignPlan = async (req, res, next) => {
+  try {
+    const trainerId = req.params.trainerId;
 
-//     const { member_profile_id, workout_template_id, meal_plan_id, notes } =
-//       req.body;
+    const { member_profile_id, workout_template_id, meal_plan_id, notes } =
+      req.body;
 
-//     const result = await trainerService.assignPlan({
-//       memberProfileId: member_profile_id,
-//       trainerId,
-//       workoutTemplateId: workout_template_id,
-//       mealPlanId: meal_plan_id,
-//       notes,
-//     });
+    const result = await trainerService.assignPlan({
+      memberProfileId: member_profile_id,
+      trainerId,
+      workoutTemplateId: workout_template_id,
+      mealPlanId: meal_plan_id,
+      notes,
+    });
 
-//     res.status(201).json(result);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    return sendSuccess(res, result, 'Plan assigned successfully', 201);
+  } catch (error) {
+    if (
+      error.message === 'Member not found.' ||
+      error.message === 'Trainer not found.' ||
+      error.message === 'Workout template not found.' ||
+      error.message === 'Meal plan not found.'
+    ) {
+      return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
+    }
+    if (error.message.includes('permission')) {
+      return sendError(res, error.message, ErrorCodes.FORBIDDEN, 403);
+    }
+    next(error);
+  }
+};
 
 // GET CLIENT FEEDBACK
 const getClientFeedback = async (req, res, next) => {
@@ -437,9 +453,9 @@ module.exports = {
   getTrainerSchedule,
   getTrainerRoster,
   getClassRoster,
-  // getWorkoutTemplates,
-  // getMealPlans,
-  // assignPlan,
+  getWorkoutTemplates,
+  getMealPlans,
+  assignPlan,
   getClientFeedback,
   recordPersonalTrainingAttendance,
 };

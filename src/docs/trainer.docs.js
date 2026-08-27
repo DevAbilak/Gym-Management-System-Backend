@@ -650,6 +650,179 @@ const trainerPaths = {
       },
     },
   },
+
+  // ============================================================
+  // TRAINER WORKOUT TEMPLATES
+  // ============================================================
+  '/trainers/{trainerId}/templates': {
+    get: {
+      summary: 'Get workout templates for a trainer',
+      description: `Returns all workout templates created by the trainer (plus public templates).
+      
+      **Access:**
+      - **Trainer**: Can only view their **own** templates (plus public templates).
+      - **Admin/Reception**: Can view **any** trainer's templates.`,
+      tags: ['Trainers'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'trainerId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Trainer profile UUID',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Workout templates retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'array',
+                    items: {
+                      $ref: '#/components/schemas/WorkoutTemplateResponse',
+                    },
+                  },
+                  message: {
+                    type: 'string',
+                    example: 'Workout templates retrieved successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+        404: { description: 'Trainer not found' },
+      },
+    },
+  },
+
+  // ============================================================
+  // TRAINER MEAL PLANS
+  // ============================================================
+  '/trainers/{trainerId}/meal-plans': {
+    get: {
+      summary: 'Get meal plans for a trainer',
+      description: `Returns all meal plans created by the trainer.
+      
+      **Access:**
+      - **Trainer**: Can only view their **own** meal plans.
+      - **Admin/Reception**: Can view **any** trainer's meal plans.`,
+      tags: ['Trainers'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'trainerId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Trainer profile UUID',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Meal plans retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/MealPlanResponse' },
+                  },
+                  message: {
+                    type: 'string',
+                    example: 'Meal plans retrieved successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+        404: { description: 'Trainer not found' },
+      },
+    },
+  },
+
+  // ============================================================
+  // ASSIGN PLAN TO MEMBER
+  // ============================================================
+  '/trainers/{trainerId}/assign-plan': {
+    post: {
+      summary: 'Assign a workout/meal plan to a member',
+      description: `
+      Assigns a workout template or meal plan (or both) to a member.
+      - Automatically deactivates any previous active assignments for the member.
+      - Sends an in-app notification to the member.
+      
+      **Access:**
+      - **Trainer**: Can only assign plans to members they are assigned to.
+      - **Admin/Reception**: Can assign plans to any member.
+    `,
+      tags: ['Trainers'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'trainerId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Trainer profile UUID',
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              $ref: '#/components/schemas/AssignPlanRequest',
+            },
+            example: {
+              member_profile_id: '550e8400-e29b-41d4-a716-446655440000',
+              workout_template_id: '66c4a1b2c3d4e5f6g7h8i9j0',
+              meal_plan_id: null,
+              notes: 'Focus on upper body strength and core stability',
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: 'Plan assigned successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/AssignmentResponse' },
+                  message: {
+                    type: 'string',
+                    example: 'Plan assigned successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        400: { description: 'Validation error' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+        404: { description: 'Trainer, member, or plan not found' },
+      },
+    },
+  },
 };
 
 const trainerSchemas = {
@@ -683,6 +856,47 @@ const trainerSchemas = {
       hourly_rate: { type: 'number' },
       bio: { type: 'string' },
       is_available: { type: 'boolean' },
+    },
+  },
+  AssignPlanRequest: {
+    type: 'object',
+    required: ['member_profile_id'],
+    properties: {
+      member_profile_id: {
+        type: 'string',
+        format: 'uuid',
+        description: 'PostgreSQL UUID of the member profile',
+      },
+      workout_template_id: {
+        type: 'string',
+        description: 'MongoDB ObjectId of the workout template (optional)',
+        nullable: true,
+      },
+      meal_plan_id: {
+        type: 'string',
+        description: 'MongoDB ObjectId of the meal plan (optional)',
+        nullable: true,
+      },
+      notes: {
+        type: 'string',
+        description: 'Optional notes for the assignment',
+      },
+    },
+  },
+
+  AssignmentResponse: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      member_profile_id: { type: 'string', format: 'uuid' },
+      trainer_id: { type: 'string', format: 'uuid' },
+      workout_template_id: { type: 'string', nullable: true },
+      meal_plan_id: { type: 'string', nullable: true },
+      assigned_at: { type: 'string', format: 'date-time' },
+      is_active: { type: 'boolean' },
+      notes: { type: 'string', nullable: true },
+      created_at: { type: 'string', format: 'date-time' },
+      updated_at: { type: 'string', format: 'date-time' },
     },
   },
 };

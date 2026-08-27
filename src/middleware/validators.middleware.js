@@ -406,30 +406,31 @@ const validateClassRoster = [
   handleValidationErrors,
 ];
 
+// Validate trainer ID param (for fetching templates/meal plans)
+const validateTrainerIdParam = [
+  param('trainerId').isUUID().withMessage('Invalid trainer ID format'),
+  handleValidationErrors,
+];
+
 // Assign workout / meal plan
-// const validateAssignPlan = [
-//   param("trainerId").isUUID().withMessage("trainerId must be a valid UUID"),
-
-//   body("member_profile_id")
-//     .notEmpty()
-//     .withMessage("member_profile_id is required")
-//     .isUUID()
-//     .withMessage("member_profile_id must be a valid UUID"),
-
-//   body("workout_template_id")
-//     .optional({ nullable: true })
-//     .isUUID()
-//     .withMessage("workout_template_id must be a valid UUID"),
-
-//   body("meal_plan_id")
-//     .optional({ nullable: true })
-//     .isUUID()
-//     .withMessage("meal_plan_id must be a valid UUID"),
-
-//   body("notes").optional().isString().withMessage("notes must be a string"),
-
-//   handleValidationErrors,
-// ];
+const validateAssignPlan = [
+  param('trainerId').isUUID().withMessage('Invalid trainer ID format'),
+  body('member_profile_id')
+    .notEmpty()
+    .withMessage('member_profile_id is required')
+    .isUUID()
+    .withMessage('member_profile_id must be a valid UUID'),
+  body('workout_template_id')
+    .optional({ nullable: true })
+    .isMongoId()
+    .withMessage('workout_template_id must be a valid MongoDB ObjectId'),
+  body('meal_plan_id')
+    .optional({ nullable: true })
+    .isMongoId()
+    .withMessage('meal_plan_id must be a valid MongoDB ObjectId'),
+  body('notes').optional().isString().withMessage('notes must be a string'),
+  handleValidationErrors,
+];
 
 // Personal training attendance
 const validatePersonalTrainingAttendance = [
@@ -1043,7 +1044,8 @@ module.exports = {
   validateGetTrainerSchedule,
   validateGetTrainerRoster,
   validateClassRoster,
-  // validateAssignPlan,
+  validateTrainerIdParam,
+  validateAssignPlan,
   validatePersonalTrainingAttendance,
   validateGetClientFeedback,
   validateDeactivateTrainer,
