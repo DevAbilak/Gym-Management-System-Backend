@@ -1,4 +1,5 @@
 const { redisClient } = require('../config/redis');
+const { MealPlan, WorkoutTemplate } = require('../models/index');
 const knex = require('../db/db');
 
 const MEMBER_CACHE_TTL = 300; // 5 minutes
@@ -103,94 +104,102 @@ const getMemberById = async (id) => {
       u.phone,
       u.is_active,
       u.role,
-      u.id AS user_id
+      u.id AS user_id,
+      ma.id AS assignment_id,
+      ma.trainer_id,
+      ma.workout_template_id,
+      ma.meal_plan_id,
+      ma.assigned_at AS plan_assigned_at,
+      ma.notes AS assignment_notes,
+      t.first_name || ' ' || t.last_name AS trainer_name
     FROM member_profiles mp
     JOIN users u ON mp.user_id = u.id
+    LEFT JOIN member_assignments ma ON ma.member_profile_id = mp.id AND ma.is_active = true
+    LEFT JOIN trainers tr ON ma.trainer_id = tr.id
+    LEFT JOIN users t ON tr.user_id = t.id
     WHERE mp.id = ?
   `,
     [id],
   );
   const member = result.rows[0];
 
+  // Fetch plan names from MongoDB (if assignment exists)
+  let active_workout_plan = null;
+  let active_meal_plan = null;
+
+  if (member.workout_template_id) {
+    const template = await WorkoutTemplate.findById(member.workout_template_id);
+    if (template) active_workout_plan = template.name;
+  }
+
+  if (member.meal_plan_id) {
+    const plan = await MealPlan.findById(member.meal_plan_id);
+    if (plan) active_meal_plan = plan.name;
+  }
+
+  const enrichedMember = {
+    id: member.id,
+    user_id: member.user_id,
+    unique_member_id: member.unique_member_id,
+    date_of_birth: member.date_of_birth,
+    gender: member.gender,
+    blood_type: member.blood_type,
+    dietary_restrictions: member.dietary_restrictions,
+    fitness_goal: member.fitness_goal,
+    emergency_contact_name: member.emergency_contact_name,
+    emergency_contact_phone: member.emergency_contact_phone,
+    created_at: member.created_at,
+    updated_at: member.updated_at,
+    email: member.email,
+    first_name: member.first_name,
+    last_name: member.last_name,
+    phone: member.phone,
+    is_active: member.is_active,
+    role: member.role,
+    // Assignment data
+    assignment: member.assignment_id
+      ? {
+          id: member.assignment_id,
+          trainer_id: member.trainer_id,
+          trainer_name: member.trainer_name,
+          workout_template_id: member.workout_template_id,
+          workout_template_name: active_workout_plan,
+          meal_plan_id: member.meal_plan_id,
+          meal_plan_name: active_meal_plan,
+          assigned_at: member.plan_assigned_at,
+          notes: member.assignment_notes,
+        }
+      : null,
+  };
+
   if (member) {
     await redisClient.set(
       cacheKey,
-      JSON.stringify(member),
+      JSON.stringify(enrichedMember),
       'EX',
       MEMBER_CACHE_TTL,
     );
   }
 
-  return member;
+  return enrichedMember;
 };
 
 const getMemberByUserId = async (userId) => {
-  const cacheKey = `member:user:${userId}`;
-  const cached = await redisClient.get(cacheKey);
-  if (cached) {
-    return JSON.parse(cached);
-  }
-
-  const result = await knex.raw(
-    `
-    SELECT
-      mp.*,
-      u.email,
-      u.first_name,
-      u.last_name,
-      u.phone,
-      u.is_active,
-      u.role
-    FROM member_profiles mp
-    JOIN users u ON mp.user_id = u.id
-    WHERE mp.user_id = ?
-  `,
+  const member = await knex.raw(
+    'SELECT id FROM member_profiles WHERE user_id = ?',
     [userId],
   );
-  const member = result.rows[0];
-  if (member) {
-    await redisClient.set(
-      cacheKey,
-      JSON.stringify(member),
-      'EX',
-      MEMBER_CACHE_TTL,
-    );
-  }
+  if (member.rows.length === 0) return null;
+  return await getMemberById(member.rows[0].id);
 };
 
 const getMemberByUniqueId = async (uniqueMemberId) => {
-  const cacheKey = `member:${uniqueMemberId}`;
-  const cached = await redisClient.get(cacheKey);
-  if (cached) {
-    return JSON.parse(cached);
-  }
-
-  const result = await knex.raw(
-    `
-    SELECT
-      mp.*,
-      u.email,
-      u.first_name,
-      u.last_name,
-      u.phone,
-      u.is_active,
-      u.role
-    FROM member_profiles mp
-    JOIN users u ON mp.user_id = u.id
-    WHERE mp.unique_member_id = ?
-  `,
+  const member = await knex.raw(
+    'SELECT id FROM member_profiles WHERE unique_member_id = ?',
     [uniqueMemberId],
   );
-  const member = result.rows[0];
-  if (member) {
-    await redisClient.set(
-      cacheKey,
-      JSON.stringify(member),
-      'EX',
-      MEMBER_CACHE_TTL,
-    );
-  }
-  return member;
+  if (member.rows.length === 0) return null;
+  return await getMemberById(member.rows[0].id);
 };
 
 const updateMember = async (id, updates) => {

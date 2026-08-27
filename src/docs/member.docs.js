@@ -324,6 +324,7 @@ const memberSchemas = {
   MemberProfileResponse: {
     type: 'object',
     properties: {
+      // --- Core Profile ---
       id: { type: 'string', format: 'uuid' },
       user_id: { type: 'string', format: 'uuid' },
       unique_member_id: { type: 'string', example: 'GYM-A3F9-7' },
@@ -349,6 +350,8 @@ const memberSchemas = {
       emergency_contact_phone: { type: 'string', nullable: true },
       created_at: { type: 'string', format: 'date-time' },
       updated_at: { type: 'string', format: 'date-time' },
+
+      // --- User Details (Joined from users table) ---
       email: { type: 'string', format: 'email' },
       first_name: { type: 'string' },
       last_name: { type: 'string' },
@@ -358,12 +361,68 @@ const memberSchemas = {
         type: 'string',
         enum: ['member', 'trainer', 'admin', 'reception'],
       },
+
+      // --- Subscription Details ---
       subscription_status: {
         type: 'string',
         enum: ['active', 'frozen', 'expired', 'cancelled'],
         nullable: true,
       },
       tier_name: { type: 'string', nullable: true },
+
+      // --- ✅ NEW: Active Assignment Details (Trainer + Plans) ---
+      assignment: {
+        type: 'object',
+        nullable: true,
+        description:
+          'The currently active assignment for this member (trainer, workout plan, meal plan). Null if none assigned.',
+        properties: {
+          id: {
+            type: 'string',
+            format: 'uuid',
+            description: 'Assignment UUID',
+          },
+          trainer_id: {
+            type: 'string',
+            format: 'uuid',
+            description: 'Trainer profile UUID',
+          },
+          trainer_name: {
+            type: 'string',
+            description: 'Full name of the assigned trainer',
+          },
+          workout_template_id: {
+            type: 'string',
+            nullable: true,
+            description: 'MongoDB ObjectId of the assigned workout template',
+          },
+          workout_template_name: {
+            type: 'string',
+            nullable: true,
+            description: 'Name of the assigned workout template',
+          },
+          meal_plan_id: {
+            type: 'string',
+            nullable: true,
+            description: 'MongoDB ObjectId of the assigned meal plan',
+          },
+          meal_plan_name: {
+            type: 'string',
+            nullable: true,
+            description: 'Name of the assigned meal plan',
+          },
+          assigned_at: {
+            type: 'string',
+            format: 'date-time',
+            description: 'When the plan was assigned',
+          },
+          notes: {
+            type: 'string',
+            nullable: true,
+            description: 'Optional notes from the trainer',
+          },
+        },
+      },
     },
   },
   UpdateMemberRequest: {
