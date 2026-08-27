@@ -1,5 +1,22 @@
 const memberService = require('../services/member.service');
+const trainerService = require('../services/trainer.service');
 const { sendSuccess, ErrorCodes, sendError } = require('../utils/response');
+const knex = require('../db/db');
+
+// HELPER FUNCTION: check if member is assigned to a specific trainer
+const isTrainerAssignedToMember = async (trainerUserId, memberProfileId) => {
+  const trainer = await trainerService.getTrainerByUserId(trainerUserId);
+  if (!trainer) return false;
+
+  const result = await knex.raw(
+    `
+    SELECT 1 FROM member_assignments
+    WHERE trainer_id = ? AND member_profile_id = ? AND is_active = true
+    `,
+    [trainer.id, memberProfileId],
+  );
+  return result.rows.length > 0;
+};
 
 const getAllMembers = async (req, res, next) => {
   try {
@@ -30,11 +47,6 @@ const getMemberById = async (req, res, next) => {
     const userId = req.user.id;
     const userRole = req.user.role;
 
-    // If role = Admin or Reception --> full access
-    if (userRole === 'admin' || userRole === 'reception') {
-      return sendSuccess(res, member, 'Member retrieved successfully', 200);
-    }
-
     // If role = Member --> only their own profile
     if (userRole === 'member') {
       if (userId !== member.user_id) {
@@ -45,19 +57,22 @@ const getMemberById = async (req, res, next) => {
           403,
         );
       }
-      return sendSuccess(res, member, 'Member retrieved successfully', 200);
     }
 
-    // TODO: needs member assignment table
     // If role = Trainer → only assigned members
+    if (userRole === 'trainer') {
+      const isAssigned = await isTrainerAssignedToMember(userId, member.id);
+      if (!isAssigned) {
+        return sendError(
+          res,
+          'Access denied. This member is not assigned to you.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
+    }
 
-    // for Unknown role → deny
-    return sendError(
-      res,
-      'Access denied. Insufficient permissions.',
-      ErrorCodes.FORBIDDEN,
-      403,
-    );
+    return sendSuccess(res, member, 'Member retrieved successfully', 200);
   } catch (error) {
     next(error);
   }
@@ -66,17 +81,13 @@ const getMemberById = async (req, res, next) => {
 const getMemberByUserId = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const result = await memberService.getMemberByUserId(userId);
+    const member = await memberService.getMemberByUserId(userId);
 
-    if (!result) {
-      return sendError(
-        res,
-        'Member not found for this user',
-        ErrorCodes.NOT_FOUND,
-        404,
-      );
+    if (!member) {
+      return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
     }
-    return sendSuccess(res, result, 'Member retrieved successfully', 200);
+
+    return sendSuccess(res, member, 'Member retrieved successfully', 200);
   } catch (error) {
     next(error);
   }
@@ -85,13 +96,12 @@ const getMemberByUserId = async (req, res, next) => {
 const getMemberByUniqueId = async (req, res, next) => {
   try {
     const { uniqueMemberId } = req.params;
+    const member = await memberService.getMemberByUniqueId(uniqueMemberId);
 
-    const result = await memberService.getMemberByUniqueId(uniqueMemberId);
-
-    if (!result) {
+    if (!member) {
       return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
     }
-    return sendSuccess(res, result, 'Member retrieved successfully', 200);
+    return sendSuccess(res, member, 'Member retrieved successfully', 200);
   } catch (error) {
     next(error);
   }

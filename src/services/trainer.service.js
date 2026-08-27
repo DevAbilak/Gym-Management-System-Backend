@@ -525,36 +525,90 @@ const assignPlan = async ({
   const trx = await knex.transaction();
 
   try {
-    // Deactivate any previous active assignment for this member (any trainer)
-    await trx.raw(
+    // Check if there's an existing active assignment for this member
+    const existingAssignment = await trx.raw(
       `
-      UPDATE member_assignments
-      SET is_active = false, updated_at = NOW()
+      SELECT * FROM member_assignments
       WHERE member_profile_id = ? AND is_active = true
       `,
       [memberProfileId],
     );
 
-    const result = await trx.raw(
-      `
-      INSERT INTO member_assignments (
-        member_profile_id,
-        trainer_id,
-        workout_template_id,
-        meal_plan_id,
-        assigned_at,
-        is_active,
-        notes
-      )
-      VALUES (?, ?, ?, ?, NOW(), true, ?)
-      RETURNING *
-      `,
-      [memberProfileId, trainerId, workoutTemplateId, mealPlanId, notes],
-    );
+    let assignmentResult;
+
+    if (existingAssignment.rows.length > 0) {
+      const existing = existingAssignment.rows[0];
+
+      // Case 1: Same trainer → UPDATE existing row (keep is_active = true)
+      if (existing.trainer_id === trainerId) {
+        const result = await trx.raw(
+          `
+          UPDATE member_assignments
+          SET 
+            workout_template_id = ?,
+            meal_plan_id = ?,
+            notes = ?,
+            updated_at = NOW()
+          WHERE id = ?
+          RETURNING *
+          `,
+          [workoutTemplateId, mealPlanId, notes, existing.id],
+        );
+        assignmentResult = result.rows[0];
+
+        req.log.info(`Updated plans for existing assignment ${existing.id}`);
+      } // Case 2: Different trainer → Deactivate old, insert new
+      else {
+        // Deactivate the old assignment
+        await trx.raw(
+          `
+          UPDATE member_assignments
+          SET is_active = false, updated_at = NOW()
+          WHERE id = ?
+          `,
+          [existing.id],
+        );
+
+        // Insert the new assignment with the new trainer
+        const result = await trx.raw(
+          `
+          INSERT INTO member_assignments (
+            member_profile_id, trainer_id, workout_template_id, meal_plan_id,
+            assigned_at, is_active, notes
+          )
+          VALUES (?, ?, ?, ?, NOW(), true, ?)
+          RETURNING *
+          `,
+          [memberProfileId, trainerId, workoutTemplateId, mealPlanId, notes],
+        );
+        assignmentResult = result.rows[0];
+
+        req.log.info(
+          `Created new assignment for member ${memberProfileId} (trainer changed)`,
+        );
+      }
+    } else {
+      // Case 3: No active assignment → Insert new
+      const result = await trx.raw(
+        `
+        INSERT INTO member_assignments (
+          member_profile_id, trainer_id, workout_template_id, meal_plan_id,
+          assigned_at, is_active, notes
+        )
+        VALUES (?, ?, ?, ?, NOW(), true, ?)
+        RETURNING *
+        `,
+        [memberProfileId, trainerId, workoutTemplateId, mealPlanId, notes],
+      );
+      assignmentResult = result.rows[0];
+
+      req.log.info(`Created new assignment for member ${memberProfileId}`);
+    }
 
     await trx.commit();
 
     await redisClient.del(`trainer:roaster:${trainerId}`);
+    await redisClient.del(`member:profile:${memberProfileId}`);
 
     try {
       let planNameParts = [];
@@ -585,7 +639,7 @@ const assignPlan = async ({
       );
     }
 
-    return result.rows[0];
+    return assignmentResult;
   } catch (error) {
     await trx.rollback();
     throw error;
