@@ -362,6 +362,46 @@ const assignPlan = async (req, res, next) => {
   }
 };
 
+// ASSIGN TRAINER TO MEMBER (No Plans)
+const assignTrainerToMember = async (req, res, next) => {
+  try {
+    const trainerId = req.params.trainerId;
+    const { member_profile_id, notes } = req.body;
+
+    if (!member_profile_id) {
+      return sendError(
+        res,
+        'member_profile_id is required',
+        ErrorCodes.VALIDATION_ERROR,
+        400,
+      );
+    }
+
+    const result = await trainerService.assignPlan({
+      memberProfileId: member_profile_id,
+      trainerId,
+      workoutTemplateId: null,
+      mealPlanId: null,
+      notes,
+    });
+
+    return sendSuccess(
+      res,
+      result,
+      'Trainer assigned to member successfully',
+      201,
+    );
+  } catch (error) {
+    if (
+      error.message === 'Member not found.' ||
+      error.message === 'Trainer not found.'
+    ) {
+      return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
+    }
+    next(error);
+  }
+};
+
 // GET CLIENT FEEDBACK
 const getClientFeedback = async (req, res, next) => {
   try {
@@ -456,6 +496,7 @@ module.exports = {
   getWorkoutTemplates,
   getMealPlans,
   assignPlan,
+  assignTrainerToMember,
   getClientFeedback,
   recordPersonalTrainingAttendance,
 };

@@ -432,6 +432,18 @@ const validateAssignPlan = [
   handleValidationErrors,
 ];
 
+// Validate assign trainer (no plans)
+const validateAssignTrainerToMember = [
+  param('trainerId').isUUID().withMessage('Invalid trainer ID format'),
+  body('member_profile_id')
+    .notEmpty()
+    .withMessage('member_profile_id is required')
+    .isUUID()
+    .withMessage('member_profile_id must be a valid UUID'),
+  body('notes').optional().isString().withMessage('notes must be a string'),
+  handleValidationErrors,
+];
+
 // Personal training attendance
 const validatePersonalTrainingAttendance = [
   param('memberProfileId')
@@ -1046,6 +1058,7 @@ module.exports = {
   validateClassRoster,
   validateTrainerIdParam,
   validateAssignPlan,
+  validateAssignTrainerToMember,
   validatePersonalTrainingAttendance,
   validateGetClientFeedback,
   validateDeactivateTrainer,

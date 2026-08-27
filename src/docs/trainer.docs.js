@@ -823,6 +823,85 @@ const trainerPaths = {
       },
     },
   },
+
+  // ============================================================
+  // ASSIGN TRAINER TO MEMBER
+  // ============================================================
+  '/trainers/{trainerId}/assign-trainer': {
+    post: {
+      summary: 'Assign a trainer to a member (without plans)',
+      description: `
+      Assigns a member to a trainer without assigning a specific workout or meal plan.
+      - This establishes the trainer‑member relationship.
+      - Automatically deactivates any previous active assignment for the member.
+      - Sends an in-app notification to the member.
+      
+      **Access:**
+      - **Admin/Reception**: Can assign any trainer to any member.
+    `,
+      tags: ['Trainers'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'trainerId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Trainer profile UUID',
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['member_profile_id'],
+              properties: {
+                member_profile_id: {
+                  type: 'string',
+                  format: 'uuid',
+                  description: 'PostgreSQL UUID of the member profile',
+                },
+                notes: {
+                  type: 'string',
+                  description: 'Optional notes for the assignment',
+                },
+              },
+            },
+            example: {
+              member_profile_id: '550e8400-e29b-41d4-a716-446655440000',
+              notes: 'New client intake',
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: 'Trainer assigned successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/AssignmentResponse' },
+                  message: {
+                    type: 'string',
+                    example: 'Trainer assigned to member successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        400: { description: 'Validation error' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+        404: { description: 'Trainer or member not found' },
+      },
+    },
+  },
 };
 
 const trainerSchemas = {
