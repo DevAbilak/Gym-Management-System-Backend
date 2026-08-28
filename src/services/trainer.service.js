@@ -3,6 +3,7 @@ const { redisClient } = require('../config/redis');
 const memberService = require('./member.service');
 const notificationService = require('./notification.service');
 const { MealPlan, WorkoutTemplate } = require('../models/index');
+const logger = require('../config/logger');
 
 const TRAINER_CACHE_TTL = 300; // 5 minutes
 const SCHEDULE_CACHE_TTL = 120; // 2 minutes
@@ -482,8 +483,9 @@ const assignPlan = async ({
   workoutTemplateId = null,
   mealPlanId = null,
   notes = null,
+  allowNull = false,
 }) => {
-  if (!workoutTemplateId && !mealPlanId) {
+  if (!workoutTemplateId && !mealPlanId && !allowNull) {
     throw new Error(
       'Either workout_template_id or meal_plan_id must be provided.',
     );
@@ -556,7 +558,7 @@ const assignPlan = async ({
         );
         assignmentResult = result.rows[0];
 
-        req.log.info(`Updated plans for existing assignment ${existing.id}`);
+        logger.info(`Updated plans for existing assignment ${existing.id}`);
       } // Case 2: Different trainer → Deactivate old, insert new
       else {
         // Deactivate the old assignment
@@ -583,7 +585,7 @@ const assignPlan = async ({
         );
         assignmentResult = result.rows[0];
 
-        req.log.info(
+        logger.info(
           `Created new assignment for member ${memberProfileId} (trainer changed)`,
         );
       }
@@ -602,7 +604,7 @@ const assignPlan = async ({
       );
       assignmentResult = result.rows[0];
 
-      req.log.info(`Created new assignment for member ${memberProfileId}`);
+      logger.info(`Created new assignment for member ${memberProfileId}`);
     }
 
     await trx.commit();
@@ -633,7 +635,7 @@ const assignPlan = async ({
         data: { trainerId, assignmentId: result.rows[0].id },
       });
     } catch (notifError) {
-      req.log.error(
+      logger.error(
         'Failed to send assignment notification:',
         notifError.message,
       );

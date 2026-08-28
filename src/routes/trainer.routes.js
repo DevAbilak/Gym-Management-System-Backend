@@ -109,7 +109,7 @@ router.post(
 
 // ASSIGN TRAINER TO MEMBER
 router.post(
-  '/trainers/:trainerId/assign-trainer',
+  '/:trainerId/assign-trainer',
   authorize('admin', 'reception'),
   validateAssignTrainerToMember,
   trainerController.assignTrainerToMember,

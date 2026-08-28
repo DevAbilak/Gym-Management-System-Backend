@@ -345,8 +345,16 @@ const assignPlan = async (req, res, next) => {
       notes,
     });
 
+    req.log.info(`Created new assignment for member ${memberProfileId}`);
+
     return sendSuccess(res, result, 'Plan assigned successfully', 201);
   } catch (error) {
+    if (
+      error.message ===
+      'Either workout_template_id or meal_plan_id must be provided.'
+    ) {
+      return sendError(res, error.message, ErrorCodes.VALIDATION_ERROR, 400);
+    }
     if (
       error.message === 'Member not found.' ||
       error.message === 'Trainer not found.' ||
@@ -383,6 +391,7 @@ const assignTrainerToMember = async (req, res, next) => {
       workoutTemplateId: null,
       mealPlanId: null,
       notes,
+      allowNull: true,
     });
 
     return sendSuccess(
