@@ -12,16 +12,26 @@ const {
 router = express.Router();
 
 router.use(authenticate);
-router.use(authorize('member', 'admin', 'reception'));
 
-router.post('/', validateCreateBooking, bookingController.bookClass);
+router.post(
+  '/',
+  authorize('member', 'admin', 'reception'),
+  validateCreateBooking,
+  bookingController.bookClass,
+);
 
 router.get('/:id', validateGetBookingById, bookingController.getBookingById);
 
-router.delete('/:id', validateCancelBooking, bookingController.cancelBooking);
+router.delete(
+  '/:id',
+  authorize('member', 'admin', 'reception'),
+  validateCancelBooking,
+  bookingController.cancelBooking,
+);
 
 router.post(
   '/:id/reschedule',
+  authorize('member', 'admin', 'reception'),
   validateRescheduleBooking,
   bookingController.rescheduleBooking,
 );

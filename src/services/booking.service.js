@@ -439,7 +439,8 @@ const getBookingById = async (bookingId) => {
       c.name AS class_name,
       c.start_time,
       c.end_time,
-      mp.user_id AS member_user_id
+      mp.user_id AS member_user_id,
+      mp.id AS member_profile_id
     FROM class_bookings cb
     JOIN classes c ON cb.class_id = c.id
     JOIN member_profiles mp ON cb.member_profile_id = mp.id

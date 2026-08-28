@@ -2,6 +2,7 @@ const bookingService = require('../services/booking.service');
 const { sendError, sendSuccess, ErrorCodes } = require('../utils/response');
 const { getMemberById } = require('../services/member.service');
 const { getClassById } = require('../services/class.service');
+const { isTrainerAssignedToMember } = require('../utils/permissionCheck');
 
 // HELPER FUNCTION: PERMISSION CHECK
 const permissionCheck = async (req, id) => {
@@ -184,10 +185,15 @@ const getBookingByMember = async (req, res, next) => {
 
     const isAllowed = await permissionCheck(req, member.user_id);
 
-    if (!isAllowed) {
+    const isAssignedTrainer = await isTrainerAssignedToMember(
+      req.user.id,
+      member.id,
+    );
+
+    if (!isAllowed && !isAssignedTrainer) {
       return sendError(
         res,
-        'Access denied. You can only view your own booking history.',
+        'Access denied. You can only view your own or assigned member booking history.',
         ErrorCodes.FORBIDDEN,
         403,
       );
@@ -218,10 +224,15 @@ const getBookingById = async (req, res, next) => {
 
     const isAllowed = await permissionCheck(req, booking.member_user_id);
 
-    if (!isAllowed) {
+    const isAssignedTrainer = await isTrainerAssignedToMember(
+      req.user.id,
+      booking.member_profile_id,
+    );
+
+    if (!isAllowed && !isAssignedTrainer) {
       return sendError(
         res,
-        'Access denied. You can only view your own bookings.',
+        'Access denied. You can only view your own or assigned member bookings.',
         ErrorCodes.FORBIDDEN,
         403,
       );

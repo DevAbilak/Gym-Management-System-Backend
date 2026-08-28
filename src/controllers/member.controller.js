@@ -1,22 +1,6 @@
 const memberService = require('../services/member.service');
-const trainerService = require('../services/trainer.service');
 const { sendSuccess, ErrorCodes, sendError } = require('../utils/response');
-const knex = require('../db/db');
-
-// HELPER FUNCTION: check if member is assigned to a specific trainer
-const isTrainerAssignedToMember = async (trainerUserId, memberProfileId) => {
-  const trainer = await trainerService.getTrainerByUserId(trainerUserId);
-  if (!trainer) return false;
-
-  const result = await knex.raw(
-    `
-    SELECT 1 FROM member_assignments
-    WHERE trainer_id = ? AND member_profile_id = ? AND is_active = true
-    `,
-    [trainer.id, memberProfileId],
-  );
-  return result.rows.length > 0;
-};
+const { isTrainerAssignedToMember } = require('../utils/permissionCheck');
 
 const getAllMembers = async (req, res, next) => {
   try {
