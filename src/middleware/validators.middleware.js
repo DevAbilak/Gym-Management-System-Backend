@@ -444,6 +444,16 @@ const validateAssignTrainerToMember = [
   handleValidationErrors,
 ];
 
+// Validate unassign trainer
+const validateUnassignTrainer = [
+  param('memberProfileId')
+    .notEmpty()
+    .withMessage('memberProfileId is required')
+    .isUUID()
+    .withMessage('Invalid member profile ID format'),
+  handleValidationErrors,
+];
+
 // Personal training attendance
 const validatePersonalTrainingAttendance = [
   param('memberProfileId')
@@ -1059,6 +1069,7 @@ module.exports = {
   validateTrainerIdParam,
   validateAssignPlan,
   validateAssignTrainerToMember,
+  validateUnassignTrainer,
   validatePersonalTrainingAttendance,
   validateGetClientFeedback,
   validateDeactivateTrainer,

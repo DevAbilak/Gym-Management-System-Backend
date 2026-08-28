@@ -422,6 +422,30 @@ const assignTrainerToMember = async (req, res, next) => {
   }
 };
 
+// UNASSIGN TRAINER
+const unassignTrainer = async (req, res, next) => {
+  try {
+    const { memberProfileId } = req.params;
+
+    const result = await trainerService.unassignTrainer(memberProfileId);
+
+    req.log.info(
+      { memberProfileId, userId: req.user.id },
+      'Trainer unassigned successfully',
+    );
+
+    return sendSuccess(res, result, 'Trainer unassigned successfully', 200);
+  } catch (error) {
+    if (error.message === 'Member not found.') {
+      return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
+    }
+    if (error.message === 'No active assignment found for this member.') {
+      return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
+    }
+    next(error);
+  }
+};
+
 // GET CLIENT FEEDBACK
 const getClientFeedback = async (req, res, next) => {
   try {
@@ -517,6 +541,7 @@ module.exports = {
   getMealPlans,
   assignPlan,
   assignTrainerToMember,
+  unassignTrainer,
   getClientFeedback,
   recordPersonalTrainingAttendance,
 };

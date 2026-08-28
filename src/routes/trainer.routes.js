@@ -12,6 +12,7 @@ const {
   validateTrainerIdParam,
   validateAssignPlan,
   validateAssignTrainerToMember,
+  validateUnassignTrainer,
 } = require('../middleware/validators.middleware');
 
 const router = express.Router();
@@ -107,6 +108,14 @@ router.post(
   authorize('admin', 'reception'),
   validateAssignTrainerToMember,
   trainerController.assignTrainerToMember,
+);
+
+// UNASSIGN TRAINER
+router.delete(
+  '/assignments/member/:memberProfileId',
+  authorize('admin', 'reception'),
+  validateUnassignTrainer,
+  trainerController.unassignTrainer,
 );
 
 module.exports = router;

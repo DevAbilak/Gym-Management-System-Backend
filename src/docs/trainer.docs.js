@@ -902,6 +902,55 @@ const trainerPaths = {
       },
     },
   },
+
+  // ============================================================
+  // UNASSIGN TRAINER
+  // ============================================================
+  '/trainers/assignments/member/{memberProfileId}': {
+    delete: {
+      summary: 'Unassign a trainer from a member (Admin/Reception only)',
+      description: `
+      Deactivates the active trainer assignment for a member.
+      - Removes the trainer-member relationship.
+      - Does NOT delete the member or trainer profiles.
+      - Sends an in-app notification to the member and trainer.
+    `,
+      tags: ['Trainers'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'memberProfileId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Member profile UUID',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Trainer unassigned successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/AssignmentResponse' },
+                  message: {
+                    type: 'string',
+                    example: 'Trainer unassigned successfully',
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+        404: { description: 'Member or active assignment not found' },
+      },
+    },
+  },
 };
 
 const trainerSchemas = {

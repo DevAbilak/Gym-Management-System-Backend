@@ -276,6 +276,8 @@ const getTrainerRoster = async (trainerId) => {
   const cacheKey = `trainer:roster:${trainerId}`;
   const cached = await redisClient.get(cacheKey);
   if (cached) {
+    console.log(true);
+
     return JSON.parse(cached);
   }
 
@@ -646,6 +648,76 @@ const assignPlan = async ({
   }
 };
 
+const unassignTrainer = async (memberProfileId) => {
+  const member = await memberService.getMemberById(memberProfileId);
+  if (!member) {
+    throw new Error('Member not found.');
+  }
+
+  // check for active assignment
+  const result = await knex.raw(
+    `
+    SELECT * FROM member_assignments WHERE member_profile_id = ? AND is_active= true
+  `,
+    [memberProfileId],
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('No active assignment found for this member.');
+  }
+
+  const assignment = result.rows[0];
+
+  // deactivate it
+  const trx = await knex.transaction();
+  try {
+    const deactivated = await trx.raw(
+      `
+      UPDATE member_assignments 
+      SET is_active = false, updated_at = NOW()
+      WHERE id = ?
+      RETURNING *  
+    `,
+      [assignment.id],
+    );
+    await trx.commit();
+
+    await redisClient.del(`member:profile:${memberProfileId}`);
+    await redisClient.del(`trainer:roster:${assignment.trainer_id}`);
+    await invalidateTrainerScheduleCache(assignment.trainer_id);
+
+    // send notification
+    try {
+      await notificationService.createNotification({
+        user_id: member.user_id,
+        type: 'system',
+        title: 'Trainer Unassigned',
+        message: 'You have been unassigned from your personal trainer.',
+        link: '/my-plans',
+        priority: 'normal',
+      });
+      await notificationService.createNotification({
+        user_id: assignment.trainer_id,
+        type: 'system',
+        title: 'member Unassigned',
+        message: `You have been unassigned from your assigned member ${member.first_name} ${member.last_name}.`,
+        link: '/my-assigned-members',
+        priority: 'normal',
+      });
+    } catch (notifError) {
+      logger.error(
+        'Failed to send unassignment notification:',
+        notifError.message,
+      );
+    }
+
+    return deactivated.rows[0];
+  } catch (error) {
+    await trx.rollback();
+    throw error;
+  }
+};
+
 // GET CLIENT FEEDBACK
 const getClientFeedback = async (trainerId) => {
   const cacheKey = `trainer:feedback:${trainerId}`;
@@ -728,6 +800,7 @@ module.exports = {
   getWorkoutTemplates,
   getMealPlans,
   assignPlan,
+  unassignTrainer,
   getClientFeedback,
   recordPersonalTrainingAttendance,
   invalidateTrainerScheduleCache,
