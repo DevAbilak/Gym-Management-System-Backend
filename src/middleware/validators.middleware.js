@@ -1042,6 +1042,59 @@ const validateCleanup = [
   handleValidationErrors,
 ];
 
+// ---------- PROGRESS VALIDATORS ----------
+
+// Log progress validator
+const validateLogProgress = [
+  body('member_assignment_id')
+    .notEmpty()
+    .withMessage('member_assignment_id is required')
+    .isUUID()
+    .withMessage('member_assignment_id must be a valid UUID'),
+  body('weight_kg')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('weight_kg must be a positive number'),
+  body('body_fat_percentage')
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage('body_fat_percentage must be between 0 and 100'),
+  body('muscle_mass_kg')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('muscle_mass_kg must be a positive number'),
+  body('notes').optional().isString().withMessage('notes must be a string'),
+  handleValidationErrors,
+];
+
+// Get progress history validator
+const validateGetProgressHistory = [
+  param('memberProfileId')
+    .isUUID()
+    .withMessage('Invalid member profile ID format'),
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  handleValidationErrors,
+];
+
+const validateGetLatestProgress = [
+  param('memberProfileId')
+    .isUUID()
+    .withMessage('Invalid member profile ID format'),
+];
+
+// Delete progress log validator
+const validateDeleteProgressLog = [
+  param('id').isUUID().withMessage('Invalid progress log ID format'),
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -1103,4 +1156,9 @@ module.exports = {
   validateDeleteNotification,
   validateGetUserNotifications,
   validateCleanup,
+
+  validateLogProgress,
+  validateGetProgressHistory,
+  validateGetLatestProgress,
+  validateDeleteProgressLog,
 };

@@ -21,6 +21,7 @@ const {
   notificationPaths,
   notificationSchemas,
 } = require('../docs/notification.docs');
+const { progressPaths, progressSchemas } = require('../docs/progress.docs');
 
 const swaggerSpec = {
   openapi: '3.0.0',
@@ -55,6 +56,7 @@ const swaggerSpec = {
     ...healthPaths,
     ...templatePaths,
     ...notificationPaths,
+    ...progressPaths,
   },
   components: {
     securitySchemes: {
@@ -77,6 +79,7 @@ const swaggerSpec = {
       ...healthSchemas,
       ...templateSchemas,
       ...notificationSchemas,
+      ...progressSchemas,
     },
   },
 };

@@ -320,6 +320,50 @@ const adminPaths = {
       },
     },
   },
+
+  // ============================================================
+  // DELETE PROGRESS LOG
+  // ============================================================
+  '/admin/progress-logs/{id}': {
+    delete: {
+      summary: 'Delete a progress log (Admin only)',
+      description: 'Permanently deletes a progress log entry.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Progress log UUID',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Progress log deleted successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: { message: { type: 'string' } },
+                  },
+                  message: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (Admin only)' },
+        404: { description: 'Progress log not found' },
+      },
+    },
+  },
 };
 
 const adminSchemas = {

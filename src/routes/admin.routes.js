@@ -6,6 +6,7 @@ const memberController = require('../controllers/member.controller');
 const trainerController = require('../controllers/trainer.controller');
 const healthController = require('../controllers/health.controller');
 const notificationController = require('../controllers/notification.controller');
+const progressController = require('../controllers/progress.controller');
 
 const {
   validateDeactivateUser,
@@ -13,6 +14,7 @@ const {
   validateReactivateTrainer,
   validateDeleteHealthMetric,
   validateCleanup,
+  validateDeleteProgressLog,
 } = require('../middleware/validators.middleware');
 
 // All admin routes require authentication and admin role
@@ -67,6 +69,13 @@ router.delete(
   '/notifications/cleanup',
   validateCleanup,
   notificationController.cleanupOldNotifications,
+);
+
+// delete progress logs
+router.delete(
+  '/progress-logs/:id',
+  validateDeleteProgressLog,
+  progressController.deleteProgressLog,
 );
 
 module.exports = router;
