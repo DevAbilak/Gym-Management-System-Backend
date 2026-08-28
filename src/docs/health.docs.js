@@ -15,7 +15,7 @@ const healthPaths = {
         BMI is automatically calculated.
         - **Member**: Only their own metrics.
         - **Admin/Reception**: Any member.
-        - **Trainer**: Cannot save health metrics.
+        - **Trainer**: Only assigned member metrics.
       `,
       tags: ['Health'],
       security: [{ BearerAuth: [] }],

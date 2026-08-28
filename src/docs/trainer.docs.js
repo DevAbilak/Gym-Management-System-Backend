@@ -53,6 +53,7 @@ const trainerPaths = {
         Returns a trainer profile by UUID.
         - **Trainer**: Only their own profile.
         - **Admin/Reception**: Any trainer.
+        - **Member**: Only their assigned trainer profile.
       `,
       tags: ['Trainers'],
       security: [{ BearerAuth: [] }],
@@ -242,6 +243,7 @@ const trainerPaths = {
         Returns the upcoming class schedule for a trainer.
         - **Trainer**: Only their own schedule.
         - **Admin/Reception**: Any trainer.
+        - **Member**: Only their assigned trainer schedule.
       `,
       tags: ['Trainers'],
       security: [{ BearerAuth: [] }],

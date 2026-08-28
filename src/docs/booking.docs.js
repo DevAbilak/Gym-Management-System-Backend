@@ -85,6 +85,7 @@ const bookingPaths = {
         Returns a single booking by UUID.
         - **Member**: Only their own bookings.
         - **Admin/Reception**: Any booking.
+        - **Trainer**: Only assigned members booking.
       `,
       tags: ['Bookings'],
       security: [{ BearerAuth: [] }],
@@ -265,7 +266,7 @@ const bookingPaths = {
         Returns all bookings for a member.
         - **Member**: Only their own history.
         - **Admin/Reception**: Any member's history.
-        - **Trainer**: Cannot view booking history.
+        - **Trainer**: Only their assigned members booking history.
       `,
       tags: ['Bookings'],
       security: [{ BearerAuth: [] }],
