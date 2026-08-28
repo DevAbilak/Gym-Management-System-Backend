@@ -308,9 +308,7 @@ const getTrainerRoster = async (trainerId) => {
   const templateIds = roster
     .map((r) => r.workout_template_id)
     .filter((id) => id !== null);
-  const planIds = removeAllListeners
-    .map((r) => r.meal_plan_id)
-    .filter((id) => id !== null);
+  const planIds = roster.map((r) => r.meal_plan_id).filter((id) => id !== null);
 
   let templateMap = {};
   let planMap = {};
