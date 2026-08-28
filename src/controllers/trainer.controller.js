@@ -1,6 +1,7 @@
 const trainerService = require('../services/trainer.service');
 const classService = require('../services/class.service');
 const { sendError, sendSuccess, ErrorCodes } = require('../utils/response');
+const { isMemberAssignedToTrainer } = require('../utils/permissionCheck');
 
 // GET MY TRAINER PROFILE
 const getMyProfile = async (req, res, next) => {
@@ -40,11 +41,16 @@ const getTrainerById = async (req, res, next) => {
       req.user.role === 'trainer' && req.user.id === trainer.user_id;
     const isAdminReception =
       req.user.role === 'admin' || req.user.role === 'reception';
+    const isAssignedMember =
+      req.user.role === 'member' &&
+      (await isMemberAssignedToTrainer(req.user.id, trainer.id));
 
-    if (!isOwn && !isAdminReception) {
+    if (!isOwn && !isAdminReception && !isAssignedMember) {
       return sendError(
         res,
-        'Access denied. You can only view your own profile.',
+        req.user.role === 'trainer'
+          ? 'Access denied. You can only view your own profile.'
+          : 'Access denied. You can only view your assigned trainer profile.',
         ErrorCodes.FORBIDDEN,
         403,
       );
@@ -179,11 +185,16 @@ const getTrainerSchedule = async (req, res, next) => {
       req.user.role === 'trainer' && req.user.id === trainer.user_id;
     const isAdminReception =
       req.user.role === 'admin' || req.user.role === 'reception';
+    const isAssignedMember =
+      req.user.role === 'member' &&
+      (await isMemberAssignedToTrainer(req.user.id, trainer.id));
 
-    if (!isOwn && !isAdminReception) {
+    if (!isOwn && !isAdminReception && !isAssignedMember) {
       return sendError(
         res,
-        'Access denied. You can only view your own schedule.',
+        req.user.role === 'trainer'
+          ? 'Access denied. You can only view your own schedule.'
+          : 'Access denied. You can only view your assigned trainer schedule.',
         ErrorCodes.FORBIDDEN,
         403,
       );

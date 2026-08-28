@@ -21,12 +21,7 @@ router.use(authenticate);
 
 router.get('/me', authorize('trainer'), trainerController.getMyProfile);
 
-router.get(
-  '/:id',
-  authorize('admin', 'reception', 'trainer'),
-  validateGetTrainerById,
-  trainerController.getTrainerById,
-);
+router.get('/:id', validateGetTrainerById, trainerController.getTrainerById);
 
 // Update trainer (owner or admin/reception)
 router.patch(
@@ -43,10 +38,9 @@ router.get(
   trainerController.getAllTrainers,
 );
 
-// Trainer schedule (owner or admin/reception)
+// Trainer schedule (owner, assigned member or admin/reception)
 router.get(
   '/:id/schedule',
-  authorize('admin', 'reception', 'trainer'),
   validateGetTrainerSchedule,
   trainerController.getTrainerSchedule,
 );
@@ -70,8 +64,8 @@ router.get(
 // Client feedback (owner or admin/reception)
 router.get(
   '/:id/feedback',
-  validateGetClientFeedback,
   authorize('admin', 'reception', 'trainer'),
+  validateGetClientFeedback,
   trainerController.getClientFeedback,
 );
 
