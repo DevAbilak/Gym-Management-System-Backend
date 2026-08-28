@@ -356,7 +356,7 @@ const assignPlan = async (req, res, next) => {
       notes,
     });
 
-    req.log.info(`Created new assignment for member ${memberProfileId}`);
+    req.log.info(`Created new assignment for member ${member_profile_id}`);
 
     return sendSuccess(res, result, 'Plan assigned successfully', 201);
   } catch (error) {
