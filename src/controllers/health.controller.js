@@ -49,11 +49,14 @@ const saveHealthProfile = async (req, res, next) => {
     const isOwn = req.user.role === 'member' && req.user.id === member.id;
     const isAdminReception =
       req.user.role === 'admin' || req.user.role === 'reception';
+    const isAssignedTrainer =
+      req.user.role === 'trainer' &&
+      (await isTrainerAssignedToMember(req.user.id, payload.member_id));
 
-    if (!isOwn || !isAdminReception) {
+    if (!isOwn && !isAdminReception && !isAssignedTrainer) {
       return sendError(
         res,
-        'Access denied. You can only save your own health metrics.',
+        'Access denied. You can only save your own or assigned member health metrics.',
         ErrorCodes.FORBIDDEN,
         403,
       );

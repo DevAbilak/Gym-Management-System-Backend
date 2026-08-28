@@ -1,6 +1,6 @@
 const express = require('express');
 const healthController = require('../controllers/health.controller');
-const { authenticate, authorize } = require('../middleware/auth.middleware');
+const { authenticate } = require('../middleware/auth.middleware');
 const {
   validateSaveHealthMetric,
   validateGetHealthHistory,
@@ -12,12 +12,7 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.post(
-  '/',
-  authorize('member', 'admin', 'reception'),
-  validateSaveHealthMetric,
-  healthController.saveHealthProfile,
-);
+router.post('/', validateSaveHealthMetric, healthController.saveHealthProfile);
 
 router.get(
   '/member/:memberId/latest',
