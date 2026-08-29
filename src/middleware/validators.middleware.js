@@ -1095,6 +1095,68 @@ const validateDeleteProgressLog = [
   handleValidationErrors,
 ];
 
+// ---------- RATING VALIDATORS ----------
+
+// Submit rating validator
+const validateSubmitRating = [
+  param('type')
+    .isIn(['trainer', 'facility', 'class'])
+    .withMessage('Invalid rating type. Must be trainer, facility, or class'),
+  body('rating_stars')
+    .notEmpty()
+    .withMessage('rating_stars is required')
+    .isInt({ min: 1, max: 5 })
+    .withMessage('rating_stars must be between 1 and 5'),
+  body('trainer_id')
+    .if(param('type').equals('trainer'))
+    .notEmpty()
+    .withMessage('trainer_id is required for trainer rating')
+    .isUUID()
+    .withMessage('trainer_id must be a valid UUID'),
+  body('class_id')
+    .if(param('type').equals('class'))
+    .notEmpty()
+    .withMessage('class_id is required for class rating')
+    .isUUID()
+    .withMessage('class_id must be a valid UUID'),
+  body('rating_dimension')
+    .optional()
+    .isString()
+    .withMessage('rating_dimension must be a string'),
+  body('comment').optional().isString().withMessage('comment must be a string'),
+  body('is_anonymous')
+    .optional()
+    .isBoolean()
+    .withMessage('is_anonymous must be a boolean'),
+  handleValidationErrors,
+];
+
+// Get trainer rating validator
+const validateGetTrainerRating = [
+  param('trainerId').isUUID().withMessage('Invalid trainer ID format'),
+  handleValidationErrors,
+];
+
+// Get flagged rating validator
+const validateGetFlaggedRating = [
+  query('threshold')
+    .optional()
+    .isInt({ min: 1, max: 5 })
+    .withMessage('threshold must be between 1 and 5'),
+  handleValidationErrors,
+];
+
+// Moderate rating validator
+const validateModerateRating = [
+  param('id').isUUID().withMessage('Invalid rating ID format'),
+  body('moderation_notes')
+    .notEmpty()
+    .withMessage('moderation_notes is required')
+    .isString()
+    .withMessage('moderation_notes must be a string'),
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -1161,4 +1223,9 @@ module.exports = {
   validateGetProgressHistory,
   validateGetLatestProgress,
   validateDeleteProgressLog,
+
+  validateSubmitRating,
+  validateModerateRating,
+  validateGetFlaggedRating,
+  validateGetTrainerRating,
 };

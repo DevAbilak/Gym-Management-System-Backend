@@ -21,7 +21,7 @@ const submitRating = async (payload) => {
       `
       SELECT 1 FROM class_bookings cb
       JOIN classes c ON cb.class_id = c.id
-      WHERE cb.member_id = ? AND c.trainer_id = ? AND cb.status = 'confirmed'
+      WHERE cb.member_profile_id = ? AND c.trainer_id = ? AND cb.status = 'confirmed'
       LIMIT 1
     `,
       [member_profile_id, trainer_id],
@@ -34,24 +34,81 @@ const submitRating = async (payload) => {
     }
   }
 
-  // check active subscription
-  const subCheck = await knex.raw(
-    `
-    SELECT 1 FROM subscriptions
-    WHERE member_profile_id = ? AND status = 'active'
-    LIMIT 1
-  `,
-    [member_profile_id],
-  );
+  // Duplicate checks
+  let existingCheck = null;
 
-  if (subCheck.rows.length === 0) {
-    throw new Error('Active subscription required to submit a rating');
+  if (rating_type === 'trainer') {
+    existingCheck = await knex.raw(
+      `
+      SELECT 1 FROM ratings
+      WHERE member_profile_id = ? AND rating_type = 'trainer' AND trainer_id = ?
+      LIMIT 1
+      `,
+      [member_profile_id, trainer_id],
+    );
+    if (existingCheck.rows.length > 0) {
+      throw new Error('You have already rated this trainer.');
+    }
   }
+
+  if (rating_type === 'class') {
+    existingCheck = await knex.raw(
+      `
+      SELECT 1 FROM ratings
+      WHERE member_profile_id = ? AND rating_type = 'class' AND class_id = ?
+      LIMIT 1
+      `,
+      [member_profile_id, class_id],
+    );
+    if (existingCheck.rows.length > 0) {
+      throw new Error('You have already rated this class.');
+    }
+
+    const bookingCheck = await knex.raw(
+      `
+      SELECT 1 FROM class_bookings
+      WHERE member_profile_id = ? AND class_id = ? AND status = 'confirmed'
+      LIMIT 1
+      `,
+      [member_profile_id, class_id],
+    );
+    if (bookingCheck.rows.length === 0) {
+      throw new Error('You must have booked this class to rate it');
+    }
+  }
+
+  if (rating_type === 'facility') {
+    existingCheck = await knex.raw(
+      `
+      SELECT 1 FROM ratings
+      WHERE member_profile_id = ? AND rating_type = 'facility'
+      LIMIT 1
+      `,
+      [member_profile_id],
+    );
+    if (existingCheck.rows.length > 0) {
+      throw new Error('You have already rated the facility.');
+    }
+  }
+
+  // check active subscription
+  // const subCheck = await knex.raw(
+  //   `
+  //   SELECT 1 FROM subscriptions
+  //   WHERE member_profile_id = ? AND status = 'active'
+  //   LIMIT 1
+  // `,
+  //   [member_profile_id],
+  // );
+
+  // if (subCheck.rows.length === 0) {
+  //   throw new Error("Active subscription required to submit a rating");
+  // }
 
   const result = await knex.raw(
     `
     INSERT INTO ratings (
-      member_profile_id, rating_type, trainer_id, class_id, rating_stars, rating_dimension, comment, is_anonymous
+      member_profile_id, rating_type, trainer_id, class_id, rating_stars, rating_dimensions, comment, is_anonymous
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     RETURNING *
   `,
@@ -61,14 +118,14 @@ const submitRating = async (payload) => {
       trainer_id || null,
       class_id || null,
       rating_stars,
-      rating_dimension,
-      comment,
+      rating_dimension || null,
+      comment || null,
       is_anonymous || false,
     ],
   );
 
   if (rating_type === 'trainer') {
-    await redisClient.del(`rating:trainer:${trainerId}`);
+    await redisClient.del(`rating:trainer:${trainer_id}`);
   }
 
   if (rating_type === 'facility') {
@@ -164,14 +221,16 @@ const moderateRating = async (ratingId, moderationNotes) => {
     [moderationNotes, ratingId],
   );
 
-  if (result.rows.length > 0) {
-    const rating = result.rows[0];
-    if (rating.rating_type === 'trainer' && rating.trainer_id) {
-      await redisClient.del(`rating:trainer:${rating.trainer_id}`);
-    }
-    if (rating.rating_type === 'facility') {
-      await redisClient.del('rating:facility');
-    }
+  if (result.rows.length === 0) {
+    throw new Error('Rating not found');
+  }
+
+  const rating = result.rows[0];
+  if (rating.rating_type === 'trainer' && rating.trainer_id) {
+    await redisClient.del(`rating:trainer:${rating.trainer_id}`);
+  }
+  if (rating.rating_type === 'facility') {
+    await redisClient.del('rating:facility');
   }
 
   return result.rows[0];

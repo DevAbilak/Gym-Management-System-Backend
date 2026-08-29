@@ -7,6 +7,7 @@ const trainerController = require('../controllers/trainer.controller');
 const healthController = require('../controllers/health.controller');
 const notificationController = require('../controllers/notification.controller');
 const progressController = require('../controllers/progress.controller');
+const ratingController = require('../controllers/rating.controller');
 
 const {
   validateDeactivateUser,
@@ -15,6 +16,8 @@ const {
   validateDeleteHealthMetric,
   validateCleanup,
   validateDeleteProgressLog,
+  validateModerateRating,
+  validateGetFlaggedRating,
 } = require('../middleware/validators.middleware');
 
 // All admin routes require authentication and admin role
@@ -76,6 +79,21 @@ router.delete(
   '/progress-logs/:id',
   validateDeleteProgressLog,
   progressController.deleteProgressLog,
+);
+
+// ------- RATING MANAGEMENT ---------
+// get flagged ratings
+router.get(
+  '/ratings/flagged',
+  validateGetFlaggedRating,
+  ratingController.getFlaggedRatings,
+);
+
+// moderate rating
+router.patch(
+  '/ratings/:id/moderate',
+  validateModerateRating,
+  ratingController.moderateRating,
 );
 
 module.exports = router;

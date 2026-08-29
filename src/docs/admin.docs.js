@@ -322,7 +322,7 @@ const adminPaths = {
   },
 
   // ============================================================
-  // DELETE PROGRESS LOG
+  // ADMIN: DELETE PROGRESS LOG
   // ============================================================
   '/admin/progress-logs/{id}': {
     delete: {
@@ -361,6 +361,141 @@ const adminPaths = {
         401: { description: 'Unauthorized' },
         403: { description: 'Forbidden (Admin only)' },
         404: { description: 'Progress log not found' },
+      },
+    },
+  },
+
+  // ============================================================
+  // ADMIN: GET FLAGGED RATINGS
+  // ============================================================
+  '/admin/ratings/flagged': {
+    get: {
+      summary: 'Get flagged ratings (Admin only)',
+      description:
+        'Returns all ratings below a threshold that have not been moderated.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'threshold',
+          in: 'query',
+          schema: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 5,
+            default: 3,
+          },
+          description:
+            'Star threshold (e.g., 3 for ratings below 3 stars). Must be between 1 and 5.',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Flagged ratings retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      count: { type: 'integer' },
+                      data: {
+                        type: 'array',
+                        items: { $ref: '#/components/schemas/RatingResponse' },
+                      },
+                    },
+                  },
+                  message: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        400: {
+          description: 'Invalid threshold (must be between 1 and 5)',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  error: { type: 'string' },
+                  code: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (Admin only)' },
+        503: { description: 'Service unavailable (database connection lost)' },
+      },
+    },
+  },
+
+  // ============================================================
+  // ADMIN: MODERATE RATING
+  // ============================================================
+
+  '/admin/ratings/{id}/moderate': {
+    patch: {
+      summary: 'Moderate a rating (Admin only)',
+      description: 'Adds moderation notes and marks a rating as moderated.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Rating UUID',
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['moderation_notes'],
+              properties: {
+                moderation_notes: {
+                  type: 'string',
+                  description:
+                    'Admin note explaining why the rating was moderated',
+                },
+              },
+            },
+            example: {
+              moderation_notes: 'Inappropriate language',
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: 'Rating moderated successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/RatingResponse' },
+                  message: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        400: { description: 'moderation_notes is required' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (Admin only)' },
+        404: { description: 'Rating not found' },
       },
     },
   },
