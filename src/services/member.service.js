@@ -123,6 +123,12 @@ const getMemberById = async (id) => {
   );
   const member = result.rows[0];
 
+  if (!member) {
+    // Store null in cache to avoid repeated DB hits
+    await redisClient.set(cacheKey, JSON.stringify(null), 'EX', 60);
+    return null;
+  }
+
   // Fetch plan names from MongoDB (if assignment exists)
   let active_workout_plan = null;
   let active_meal_plan = null;
