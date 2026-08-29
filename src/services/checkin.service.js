@@ -1,5 +1,6 @@
 const knex = require('../db/db');
 const { redisClient } = require('../config/redis');
+const { invalidateKpiCache } = require('./admin.service');
 
 const CACHE_TTL = 300; // 5 minutes
 
@@ -88,6 +89,7 @@ const checkIn = async (uniqueId, verifiedBy = null) => {
 
   // Invalidate cached member data
   await redisClient.del(`member:${uniqueId}`);
+  await invalidateKpiCache();
 
   return {
     member: {
@@ -126,6 +128,7 @@ const overRideCheckIn = async (uniqueId, reason, verifiedBy) => {
 
   // Invalidate cache
   await redisClient.del(`member:${uniqueId}`);
+  await invalidateKpiCache();
 
   return {
     member: {

@@ -1,5 +1,6 @@
 const { registerUser } = require('../services/auth.service');
 const { sendError, sendSuccess, ErrorCodes } = require('../utils/response');
+const adminService = require('../services/admin.service');
 
 const adminRegister = async (req, res, next) => {
   try {
@@ -56,6 +57,16 @@ const adminRegister = async (req, res, next) => {
   }
 };
 
+const getAdminKPIs = async (req, res, next) => {
+  try {
+    const kpis = await adminService.getAdminKPIs();
+    return sendSuccess(res, kpis, 'Admin KPIs retrieved successfully', 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   adminRegister,
+  getAdminKPIs,
 };

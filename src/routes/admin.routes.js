@@ -96,4 +96,7 @@ router.patch(
   ratingController.moderateRating,
 );
 
+// get admin KPIs
+router.get('/kpis', adminController.getAdminKPIs);
+
 module.exports = router;

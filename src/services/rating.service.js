@@ -1,5 +1,6 @@
 const knex = require('../db/db');
 const { redisClient } = require('../config/redis');
+const { invalidateKpiCache } = require('./admin.service');
 
 const CACHE_TTL = 300; // 5 minutes
 
@@ -132,6 +133,8 @@ const submitRating = async (payload) => {
     await redisClient.del('rating:facility');
   }
 
+  await invalidateKpiCache();
+
   return result.rows[0];
 };
 
@@ -232,6 +235,8 @@ const moderateRating = async (ratingId, moderationNotes) => {
   if (rating.rating_type === 'facility') {
     await redisClient.del('rating:facility');
   }
+
+  await invalidateKpiCache();
 
   return result.rows[0];
 };

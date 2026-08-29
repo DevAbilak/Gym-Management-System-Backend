@@ -439,7 +439,6 @@ const adminPaths = {
   // ============================================================
   // ADMIN: MODERATE RATING
   // ============================================================
-
   '/admin/ratings/{id}/moderate': {
     patch: {
       summary: 'Moderate a rating (Admin only)',
@@ -496,6 +495,56 @@ const adminPaths = {
         401: { description: 'Unauthorized' },
         403: { description: 'Forbidden (Admin only)' },
         404: { description: 'Rating not found' },
+      },
+    },
+  },
+
+  // ============================================================
+  // ADMIN KPIs (Dashboard)
+  // ============================================================
+  '/admin/kpis': {
+    get: {
+      summary: 'Get admin dashboard KPIs (Admin only)',
+      description: `
+      Returns key performance indicators for the gym dashboard:
+      - Active members (with active subscriptions)
+      - Today's check-ins
+      - Monthly recurring revenue (MRR)
+      - Average trainer rating
+      - Satisfaction index (facility rating)
+      - Timestamp of last update
+    `,
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      responses: {
+        200: {
+          description: 'KPIs retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      active_members: { type: 'integer' },
+                      today_checkins: { type: 'integer' },
+                      monthly_revenue: { type: 'number' },
+                      avg_trainer_rating: { type: 'number' },
+                      satisfaction_index: { type: 'number' },
+                      last_updated: { type: 'string', format: 'date-time' },
+                    },
+                  },
+                  message: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+        500: { description: 'Server error' },
       },
     },
   },

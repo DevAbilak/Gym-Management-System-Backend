@@ -1,4 +1,5 @@
 const knex = require('../db/db');
+const { invalidateKpiCache } = require('./admin.service');
 
 const createSubscription = async (payload) => {
   const { member_profile_id, membership_tier_id, start_date, auto_renew } =
@@ -15,6 +16,8 @@ const createSubscription = async (payload) => {
   `,
     [member_profile_id, membership_tier_id, start, start, auto_renew ?? false],
   );
+
+  await invalidateKpiCache();
 
   return result.rows[0];
 };
@@ -45,6 +48,8 @@ const updateSubscriptionStatus = async (subscriptionId, newStatus) => {
   }
 
   const result = await knex.raw(query, params);
+
+  await invalidateKpiCache();
   return result.rows[0];
 };
 
