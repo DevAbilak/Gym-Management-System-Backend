@@ -2,6 +2,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const knex = require('../db/db');
 const { redisClient } = require('../config/redis');
+const logger = require('../config/logger');
 
 const STARPAY_API_URL = process.env.STARPAY_API_URL;
 const API_SECRET = process.env.STARPAY_API_SECRET;
@@ -50,22 +51,43 @@ const createTransaction = async (params) => {
 
   if (customerEmail) payload.customerEmail = customerEmail;
 
-  const response = await axios.post(`${STARPAY_API_URL}/trdp/order`, payload, {
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-secret': API_SECRET,
-    },
-  });
+  try {
+    const response = await axios.post(
+      `${STARPAY_API_URL}/trdp/order`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-secret': API_SECRET,
+        },
+      },
+    );
 
-  if (response.data.status !== 'success') {
-    throw new Error(response.data.message || 'Failed to create payment order');
+    if (response.data.status !== 'success') {
+      throw new Error(
+        response.data.message || 'Failed to create payment order',
+      );
+    }
+
+    return {
+      billRefNo: response.data.data.order_id,
+      paymentUrl: response.data.data.payment_url,
+    };
+  } catch (error) {
+    // Log the full error response from StarPay
+    if (error.response) {
+      logger.error('StarPay Error Status:', error.response.status);
+      logger.error(
+        'StarPay Error Data:',
+        JSON.stringify(error.response.data, null, 2),
+      );
+    } else {
+      logger.error('StarPay Error:', error.message);
+    }
+    throw new Error(
+      error.response?.data?.message || 'Failed to create payment order',
+    );
   }
-
-  return {
-    orderId: response.data.data.order_id,
-    billRefNo: response.data.data.billRefNo,
-    paymentUrl: response.data.data.paymentUrl,
-  };
 };
 
 const verifyPayment = async (orderId) => {

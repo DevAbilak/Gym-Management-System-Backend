@@ -70,7 +70,7 @@ const createPendingSubscription = async (payload) => {
     `
     SELECT u.email, u.first_name,u.last_name,u.phone
     FROM member_profiles mp
-    JOIN users ON mp.user_id = u.id
+    JOIN users u ON mp.user_id = u.id
     WHERE mp.id = ?
   `,
     [member_profile_id],
@@ -112,12 +112,14 @@ const createPendingSubscription = async (payload) => {
       member_profile_id,
       membership_tier_id,
       start,
-      expiryDate.toISOString().split('T')[0],
+      expiry.toISOString().split('T')[0],
       auto_renew || false,
     ],
   );
 
   const subscription = subscriptionResult.rows[0];
+
+  const price = parseFloat(tier.price);
 
   // prepare starpay payload
   const items = [
@@ -125,7 +127,7 @@ const createPendingSubscription = async (payload) => {
       productId: membership_tier_id,
       quantity: 1,
       item_name: tier.name,
-      unit_price: tier.price,
+      unit_price: price,
     },
   ];
 
@@ -136,7 +138,7 @@ const createPendingSubscription = async (payload) => {
 
   // initiate payment with starpay
   const payment = await createTransaction({
-    amount: tier.price,
+    amount: price,
     description: `Gym Membership - ${tier.name}`,
     customerName: `${member.first_name} ${member.last_name}`,
     customerPhoneNumber: member.phone || '+251900000000',
@@ -144,6 +146,7 @@ const createPendingSubscription = async (payload) => {
     items,
     metadata,
   });
+  console.log(payment);
 
   // store mapping in redis
   await redisClient.set(
