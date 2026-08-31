@@ -24,6 +24,10 @@ const {
 const { progressPaths, progressSchemas } = require('../docs/progress.docs');
 const { ratingPaths, ratingSchemas } = require('../docs/rating.docs');
 const { paymentPaths, paymentSchemas } = require('../docs/payment.docs');
+const {
+  subscriptionPaths,
+  subscriptionSchemas,
+} = require('../docs/subscription.docs');
 
 const swaggerSpec = {
   openapi: '3.0.0',
@@ -61,6 +65,7 @@ const swaggerSpec = {
     ...progressPaths,
     ...ratingPaths,
     ...paymentPaths,
+    ...subscriptionPaths,
   },
   components: {
     securitySchemes: {
@@ -86,6 +91,7 @@ const swaggerSpec = {
       ...progressSchemas,
       ...ratingSchemas,
       ...paymentSchemas,
+      ...subscriptionSchemas,
     },
   },
 };

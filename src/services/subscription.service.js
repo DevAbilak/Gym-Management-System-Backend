@@ -216,10 +216,55 @@ const getActiveSubscription = async (memberProfileId) => {
   return result.rows[0];
 };
 
+const getSubscriptionByMember = async (
+  memberProfileId,
+  page = 1,
+  limit = 20,
+) => {
+  const offset = (page - 1) * limit;
+
+  const dataResult = await knex.raw(
+    `
+        SELECT 
+          s.*,
+          t.name AS tier_name,
+          t.price,
+          t.duration_months
+        FROM subscriptions s
+        JOIN membership_tiers t ON s.membership_tier_id = t.id
+        WHERE s.member_profile_id = ?
+        ORDER BYs.created_at DESC
+        LIMIT ? OFFSET ?  
+      `,
+    [memberProfileId, limit, offset],
+  );
+
+  const countResult = await knex.raw(
+    `
+        SELECT COUNT(*) as total
+        FROM subscriptions
+        WHERE member_profile_id = ?
+      `,
+    [memberProfileId],
+  );
+  const total = parseInt(countResult.rows[0]?.total || 0);
+
+  return {
+    data: dataResult.rows,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
 module.exports = {
   createSubscription,
   createPendingSubscription,
   updateSubscriptionStatus,
   getSubscriptionById,
   getActiveSubscription,
+  getSubscriptionByMember,
 };

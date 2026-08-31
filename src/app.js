@@ -17,6 +17,7 @@ const templateRoutes = require('./routes/template.routes');
 const progressRoutes = require('./routes/progress.routes');
 const ratingRoutes = require('./routes/rating.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const subscriptionRoutes = require('./routes/subscription.routes');
 const logger = require('./config/logger');
 const knex = require('./db/db');
 const { redisClient } = require('./config/redis');
@@ -50,6 +51,7 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Versioned routes
 app.use('/api/v1', apiLimiter);
@@ -66,6 +68,7 @@ app.use('/api/v1/templates', templateRoutes);
 app.use('/api/v1/progress', progressRoutes);
 app.use('/api/v1/ratings', ratingRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/subscriptions', subscriptionRoutes);
 
 // health check
 app.get('/health', async (req, res) => {

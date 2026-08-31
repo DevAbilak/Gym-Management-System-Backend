@@ -1192,6 +1192,72 @@ const validateVerifyPayment = [
   handleValidationErrors,
 ];
 
+// ---------- SUBSCRIPTION VALIDATORS ----------
+
+// Create subscription validator
+const validateCreateSubscription = [
+  body('member_profile_id')
+    .notEmpty()
+    .withMessage('member_profile_id is required')
+    .isUUID()
+    .withMessage('member_profile_id must be a valid UUID'),
+  body('membership_tier_id')
+    .notEmpty()
+    .withMessage('membership_tier_id is required')
+    .isUUID()
+    .withMessage('membership_tier_id must be a valid UUID'),
+  body('start_date')
+    .optional()
+    .isISO8601()
+    .withMessage('start_date must be a valid date (YYYY-MM-DD)'),
+  body('auto_renew')
+    .optional()
+    .isBoolean()
+    .withMessage('auto_renew must be a boolean'),
+  handleValidationErrors,
+];
+
+// Update subscription status validator
+const validateUpdateSubscriptionStatus = [
+  param('id').isUUID().withMessage('Invalid subscription ID format'),
+  body('status')
+    .notEmpty()
+    .withMessage('status is required')
+    .isIn(['active', 'frozen', 'expired', 'cancelled'])
+    .withMessage('Invalid status. Must be: active, frozen, expired, cancelled'),
+  handleValidationErrors,
+];
+
+// Get active subscription validator
+const validateGetActiveSubscription = [
+  param('memberProfileId')
+    .isUUID()
+    .withMessage('Invalid member profile ID format'),
+  handleValidationErrors,
+];
+
+// Get subscription by ID validator
+const validateGetSubscriptionById = [
+  param('id').isUUID().withMessage('Invalid subscription ID format'),
+  handleValidationErrors,
+];
+
+// Get subscriptions by member validator
+const validateGetSubscriptionsByMember = [
+  param('memberProfileId')
+    .isUUID()
+    .withMessage('Invalid member profile ID format'),
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -1266,4 +1332,10 @@ module.exports = {
 
   validateInitPayment,
   validateVerifyPayment,
+
+  validateCreateSubscription,
+  validateUpdateSubscriptionStatus,
+  validateGetActiveSubscription,
+  validateGetSubscriptionById,
+  validateGetSubscriptionsByMember,
 };

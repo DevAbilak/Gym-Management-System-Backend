@@ -548,6 +548,47 @@ const adminPaths = {
       },
     },
   },
+
+  // ============================================================
+  // ADMIN: GET SUBSCRIPTION BY ID
+  // ============================================================
+  '/admin/subscriptions/{id}': {
+    get: {
+      summary: 'Get subscription by ID (Admin only)',
+      description: 'Returns a single subscription by its UUID.',
+      tags: ['Admin'],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          description: 'Subscription UUID',
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Subscription retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { $ref: '#/components/schemas/SubscriptionResponse' },
+                  message: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden (insufficient permissions)' },
+        404: { description: 'Subscription not found' },
+      },
+    },
+  },
 };
 
 const adminSchemas = {

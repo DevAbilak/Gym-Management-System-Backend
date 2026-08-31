@@ -8,6 +8,7 @@ const healthController = require('../controllers/health.controller');
 const notificationController = require('../controllers/notification.controller');
 const progressController = require('../controllers/progress.controller');
 const ratingController = require('../controllers/rating.controller');
+const subscriptionController = require('../controllers/subscription.controller');
 
 const {
   validateDeactivateUser,
@@ -18,6 +19,7 @@ const {
   validateDeleteProgressLog,
   validateModerateRating,
   validateGetFlaggedRating,
+  validateGetSubscriptionById,
 } = require('../middleware/validators.middleware');
 
 // All admin routes require authentication and admin role
@@ -94,6 +96,14 @@ router.patch(
   '/ratings/:id/moderate',
   validateModerateRating,
   ratingController.moderateRating,
+);
+
+// ------- SUBSCRIPTION MANAGEMENT ---------
+// get subscription by ID
+router.get(
+  '/subscriptions/:id',
+  validateGetSubscriptionById,
+  subscriptionController.getSubscriptionById,
 );
 
 // get admin KPIs
