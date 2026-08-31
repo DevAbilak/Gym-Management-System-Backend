@@ -131,7 +131,7 @@ const processWebhook = async (payload, timestamp, signature) => {
     status,
     amount,
     externalReferenceId: _externalReferenceId,
-    payment_type,
+    payment_type: _payment_type,
     receipt_url: _receipt_url,
   } = payload;
 
@@ -167,13 +167,7 @@ const processWebhook = async (payload, timestamp, signature) => {
       ) VALUES (?, ?, ?, 'ETB', 'paid', ?, ?, CURRENT_DATE, NOW())
       RETURNING *
     `,
-      [
-        subscription_id,
-        `INV-${Date.now()}`,
-        amount,
-        payment_type || 'starpay',
-        billRefNo,
-      ],
+      [subscription_id, `INV-${Date.now()}`, amount, 'starpay', billRefNo],
     );
 
     // update subscription status to active
