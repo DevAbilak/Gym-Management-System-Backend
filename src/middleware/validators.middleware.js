@@ -1157,6 +1157,41 @@ const validateModerateRating = [
   handleValidationErrors,
 ];
 
+// ---------- PAYMENT VALIDATORS ----------
+
+//  Validate payment initiation request
+const validateInitPayment = [
+  body('member_profile_id')
+    .notEmpty()
+    .withMessage('member_profile_id is required')
+    .isUUID()
+    .withMessage('member_profile_id must be a valid UUID'),
+  body('membership_tier_id')
+    .notEmpty()
+    .withMessage('membership_tier_id is required')
+    .isUUID()
+    .withMessage('membership_tier_id must be a valid UUID'),
+  body('start_date')
+    .optional()
+    .isISO8601()
+    .withMessage('start_date must be a valid date (YYYY-MM-DD)'),
+  body('auto_renew')
+    .optional()
+    .isBoolean()
+    .withMessage('auto_renew must be a boolean'),
+  handleValidationErrors,
+];
+
+// Validate payment verification request
+const validateVerifyPayment = [
+  param('orderId')
+    .notEmpty()
+    .withMessage('orderId is required')
+    .isString()
+    .withMessage('orderId must be a string'),
+  handleValidationErrors,
+];
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -1228,4 +1263,7 @@ module.exports = {
   validateModerateRating,
   validateGetFlaggedRating,
   validateGetTrainerRating,
+
+  validateInitPayment,
+  validateVerifyPayment,
 };
