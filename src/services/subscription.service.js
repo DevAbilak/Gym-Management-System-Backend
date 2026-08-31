@@ -236,7 +236,7 @@ const getSubscriptionByMember = async (
         FROM subscriptions s
         JOIN membership_tiers t ON s.membership_tier_id = t.id
         WHERE s.member_profile_id = ?
-        ORDER BYs.created_at DESC
+        ORDER BY s.created_at DESC
         LIMIT ? OFFSET ?  
       `,
     [memberProfileId, limit, offset],
