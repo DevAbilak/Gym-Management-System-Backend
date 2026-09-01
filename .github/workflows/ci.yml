@@ -9,6 +9,13 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+      REDIS_URL: ${{ secrets.REDIS_URL_TEST }}
+      MONGODB_URI: ${{ secrets.MONGODB_URI_TEST }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      APP_URL: http://localhost:3000
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,8 +34,3 @@ jobs:
 
       - name: Run Unit Tests
         run: npm test
-        env:
-          # GitHub will inject these from repo secrets (Settings -> Secrets and variables -> Actions)
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}

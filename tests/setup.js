@@ -1,7 +1,12 @@
 const path = require("path");
+const fs = require("fs");
 
-// Load .env.test FIRST
-require("dotenv").config({ path: path.resolve(__dirname, "../.env.test") });
+// Only load .env.test if the file exists (local dev)
+// In CI, environment variables are set directly via GitHub Actions secrets.
+const envPath = path.resolve(__dirname, "../.env.test");
+if (fs.existsSync(envPath)) {
+  require("dotenv").config({ path: envPath });
+}
 
 // Safety guard
 if (process.env.NODE_ENV !== "test") {
