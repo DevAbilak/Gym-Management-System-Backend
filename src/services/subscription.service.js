@@ -141,7 +141,7 @@ const createPendingSubscription = async (payload) => {
     amount: price,
     description: `Gym Membership - ${tier.name}`,
     customerName: `${member.first_name} ${member.last_name}`,
-    customerPhoneNumber: member.phone || '+251900000000',
+    customerPhoneNumber: '+251900000000',
     customerEmail: member.email,
     items,
     metadata,

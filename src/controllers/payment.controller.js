@@ -18,6 +18,10 @@ const initPayment = async (req, res, next) => {
       [member_profile_id],
     );
 
+    if (memberCheck.rows.length === 0) {
+      return sendError(res, 'Member not found.', ErrorCodes.NOT_FOUND, 404);
+    }
+
     const isOwn =
       userRole === 'member' && memberCheck.rows[0].user_id === userId;
     const isAdminReception = userRole === 'admin' || userRole === 'reception';
