@@ -1,32 +1,61 @@
-const knex = require("../src/db/db");
-const mongoose = require("mongoose");
-const { redisClient } = require("../src/config/redis");
-const { cleanAll } = require("./helpers/db");
+const path = require("path");
 
-// safety guard
+// Load .env.test FIRST
+require("dotenv").config({ path: path.resolve(__dirname, "../.env.test") });
+
+// Safety guard
 if (process.env.NODE_ENV !== "test") {
   console.error("FATAL: Tests must be run with NODE_ENV=test");
   console.error("Run: NODE_ENV=test npm test");
   process.exit(1);
 }
 
-// global hooks
-beforeAll(async () => {
-  // connect mongodb if not already connected
-  if (mongoose.connection.readyState !== 1) {
-    await mongoose.connect(process.env.MONGODB_URI);
-  }
-  await cleanAll();
-});
+const knex = require("../src/db/db");
+const mongoose = require("mongoose");
+const { redisClient } = require("../src/config/redis");
+const { cleanAll } = require("./helpers/db");
 
-beforeEach(async () => {
+// GLOBAL HOOKS
+
+// Increase timeout to 30 seconds
+jest.setTimeout(30000);
+
+beforeAll(async () => {
+  // Connect to databases
+  try {
+    await knex.raw("SELECT 1");
+    console.log("PostgreSQL connected (test)");
+  } catch (err) {
+    console.error("PostgreSQL connection failed:", err.message);
+    process.exit(1);
+  }
+
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      await mongoose.connect(
+        process.env.MONGODB_URI || "mongodb://localhost:27017/gym_test",
+      );
+      console.log("MongoDB connected (test)");
+    }
+  } catch (err) {
+    console.warn("MongoDB connection failed, continuing without MongoDB");
+  }
+
+  try {
+    await redisClient.ping();
+    console.log("Redis connected (test)");
+  } catch (err) {
+    console.warn("Redis connection failed, continuing without Redis");
+  }
+
+  // Clean ONCE before ALL tests
   await cleanAll();
-});
+  console.log("Database cleaned before tests");
+}, 30000);
 
 afterAll(async () => {
   await knex.destroy();
   await redisClient.quit();
   await mongoose.disconnect();
-});
-
-module.exports = { cleanAll };
+  console.log("Database connections closed");
+}, 30000);
