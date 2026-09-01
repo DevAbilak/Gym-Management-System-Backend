@@ -1,5 +1,8 @@
 const { cleanEnv, str, port, url } = require('envalid');
 
+const envFile = process.env.NODE_ENV === 'test' ? 'env.test' : '.env';
+require('dotenv').config({ path: envFile });
+
 module.exports = cleanEnv(process.env, {
   NODE_ENV: str({
     choices: ['development', 'test', 'production'],
