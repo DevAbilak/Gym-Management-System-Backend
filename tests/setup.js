@@ -18,12 +18,14 @@ if (process.env.NODE_ENV !== "test") {
 const knex = require("../src/db/db");
 const mongoose = require("mongoose");
 const { redisClient } = require("../src/config/redis");
-const { cleanAll } = require("./helpers/db");
+const { truncatePostgres, clearMongo, clearRedis } = require("./helpers/db");
 
 // GLOBAL HOOKS
 
 // Increase timeout to 30 seconds
 jest.setTimeout(30000);
+
+let redisConnected = false;
 
 beforeAll(async () => {
   // Connect to databases
@@ -48,19 +50,27 @@ beforeAll(async () => {
 
   try {
     await redisClient.ping();
+    redisConnected = true;
     console.log("Redis connected (test)");
   } catch (err) {
     console.warn("Redis connection failed, continuing without Redis");
+    redisConnected = false;
   }
 
   // Clean ONCE before ALL tests
-  await cleanAll();
+  await truncatePostgres();
+  await clearMongo();
+  if (redisConnected) {
+    await clearRedis();
+  }
   console.log("Database cleaned before tests");
 }, 30000);
 
 afterAll(async () => {
   await knex.destroy();
-  await redisClient.quit();
+  if (redisConnected) {
+    await redisClient.quit();
+  }
   await mongoose.disconnect();
   console.log("Database connections closed");
 }, 30000);

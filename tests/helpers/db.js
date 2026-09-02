@@ -37,7 +37,13 @@ const clearMongo = async () => {
 
 // flush redis
 const clearRedis = async () => {
-  await redisClient.flushall();
+  try {
+    if (redisClient.flushall) {
+      await redisClient.flushall();
+    }
+  } catch (error) {
+    console.warn("Failed to clear Redis:", err.message);
+  }
 };
 
 // clean all test databases
