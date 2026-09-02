@@ -7,7 +7,7 @@ let redisClient;
 let testRedisConnection;
 
 // If we are in test mode and REDIS_URL is not set, use a mock
-if (process.env.NODE_ENV === 'test' && !redisUrl) {
+if (process.env.NODE_ENV === 'test') {
   logger.info('Test mode: Using mock Redis client');
 
   // Create a mock Redis client with the same interface as ioredis
