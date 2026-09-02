@@ -71,6 +71,8 @@ afterAll(async () => {
   if (redisConnected) {
     await redisClient.quit();
   }
-  await mongoose.disconnect();
+  if (mongoose.connection.readyState === 1) {
+    await mongoose.disconnect();
+  }
   console.log("Database connections closed");
 }, 30000);

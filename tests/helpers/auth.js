@@ -32,12 +32,22 @@ const createTestUser = async (role = "member", overrides = {}) => {
   const res = await request(app).post("/api/v1/auth/register").send(userData);
 
   const responseBody = res.body;
+  const user = responseBody.user || responseBody.data?.user;
+
+  // Login to get tokens
+  const loginRes = await request(app)
+    .post("/api/v1/auth/login")
+    .send({ email: userData.email, password: userData.password });
+
+  const token = loginRes.body.data?.accessToken || loginRes.body.accessToken;
+  const refreshToken =
+    loginRes.body.data?.refreshToken || loginRes.body.refreshToken;
 
   return {
     raw: responseBody,
-    user: responseBody.data?.user || responseBody.data,
-    token: responseBody.data?.accessToken || null,
-    refreshToken: responseBody.data?.refreshToken || null,
+    user,
+    token,
+    refreshToken,
     password: userData.password,
     email: userData.email,
     memberProfileId:
@@ -50,14 +60,11 @@ const loginUser = async (email, password) => {
   const res = await request(app)
     .post("/api/v1/auth/login")
     .send({ email, password });
-
-  const responseBody = res.body;
-
   return {
-    raw: responseBody,
-    user: responseBody.data?.user || responseBody.data,
-    accessToken: responseBody.data?.accessToken || null,
-    refreshToken: responseBody.data?.refreshToken || null,
+    raw: res.body,
+    user: res.body.data?.user || res.body.user,
+    accessToken: res.body.data?.accessToken || res.body.accessToken,
+    refreshToken: res.body.data?.refreshToken || res.body.refreshToken,
   };
 };
 

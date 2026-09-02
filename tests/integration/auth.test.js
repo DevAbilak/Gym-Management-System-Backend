@@ -157,7 +157,7 @@ describe("Auth API", () => {
         email: user.user.email,
         password: user.password,
       });
-      accessToken = loginRes.body.data.accessToken;
+      accessToken = loginRes.body.data.accessToken || loginRes.body.accessToken;
     });
 
     it("should logout successfully", async () => {

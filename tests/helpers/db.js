@@ -24,6 +24,11 @@ const truncatePostgres = async () => {
 
 // delete all mongoDB collections
 const clearMongo = async () => {
+  // Only clear if MongoDB is connected
+  if (mongoose.connection.readyState !== 1) {
+    console.log("MongoDB not connected, skipping clear");
+    return;
+  }
   const collections = [
     "healthmetrics",
     "workouttemplates",
@@ -31,7 +36,14 @@ const clearMongo = async () => {
     "notifications",
   ];
   for (const collection of collections) {
-    await mongoose.connection.collection(collection).deleteMany({});
+    try {
+      const coll = mongoose.connection.collection(collection);
+      if (coll) {
+        await coll.deleteMany({});
+      }
+    } catch (err) {
+      console.warn(`Failed to clear collection ${collection}:`, err.message);
+    }
   }
 };
 
