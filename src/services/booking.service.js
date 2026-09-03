@@ -42,7 +42,7 @@ const bookClass = async (memberProfileId, classId) => {
       UPDATE classes
       SET current_bookings = current_bookings + 1, updated_at = NOW()
       WHERE id = ? AND capacity > current_bookings
-      RETURNING *  
+      RETURNING id,trainer_id,name,description,category,difficulty,start_time,end_time, location 
     `,
       [classId],
     );
@@ -62,11 +62,10 @@ const bookClass = async (memberProfileId, classId) => {
 
       await trx.commit();
       await invalidateBookingCache(bookingId, memberProfileId);
-      await invalidateTrainerScheduleCache(updatedClass.trainer_id);
       await redisClient.del(`trainer:class:${classId}:roster`);
       return {
         status: 'waitlisted',
-        message: 'Class id full. You are on the waitlist.',
+        message: 'Class is full. You are on the waitlist.',
       };
     }
 
@@ -107,6 +106,7 @@ const bookClass = async (memberProfileId, classId) => {
     return {
       status: 'confirmed',
       message: 'Booking successful',
+      bookingId,
       class: updatedClass.rows[0],
     };
   } catch (error) {
