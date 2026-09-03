@@ -1,6 +1,8 @@
 const request = require("supertest");
 const app = require("../../src/app");
 const knex = require("../../src/db/db");
+const bcrypt = require("bcrypt");
+const { randomUUID } = require("crypto");
 
 // create a test user and return token
 const createTestUser = async (role = "member", overrides = {}) => {
@@ -85,9 +87,93 @@ const createAuthenticatedUser = async (role = "member", overrides = {}) => {
   };
 };
 
+// Create a test user directly in DB and return token
+const createTestUserInDB = async (role, overrides = {}) => {
+  const id = randomUUID();
+  const email = overrides.email || `${role}-${Date.now()}@test.com`;
+  const password = overrides.password || "TestPass123!";
+  const password_hash = await bcrypt.hash(password, 12);
+  const first_name =
+    overrides.first_name || role.charAt(0).toUpperCase() + role.slice(1);
+  const last_name = overrides.last_name || "User";
+
+  // Insert into users table
+  await knex.raw(
+    `
+    INSERT INTO users (id, email, password_hash, first_name, last_name, phone, role, is_active)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      id,
+      email,
+      password_hash,
+      first_name,
+      last_name,
+      overrides.phone || "+251900000000",
+      role,
+      true,
+    ],
+  );
+
+  let memberProfileId = null;
+  let trainerProfileId = null;
+
+  // If member, create member profile
+  if (role === "member") {
+    const unique_member_id = `GYM-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.floor(Math.random() * 10)}`;
+    const memberRes = await knex.raw(
+      `
+      INSERT INTO member_profiles (user_id, unique_member_id, date_of_birth, gender, fitness_goal, emergency_contact_name, emergency_contact_phone)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      RETURNING id
+      `,
+      [
+        id,
+        unique_member_id,
+        "1996-01-01",
+        "male",
+        "muscle_building",
+        "Jane Doe",
+        "+251911111111",
+      ],
+    );
+    memberProfileId = memberRes.rows[0].id;
+  }
+
+  // If trainer, create trainer profile
+  if (role === "trainer") {
+    const trainerRes = await knex.raw(
+      `
+      INSERT INTO trainers (user_id, specialty, years_of_experience, certification, hourly_rate)
+      VALUES (?, ?, ?, ?, ?)
+      RETURNING id
+      `,
+      [id, "HIIT & Strength", 5, "NSCA-CPT", 45.0],
+    );
+    trainerProfileId = trainerRes.rows[0].id;
+  }
+
+  // Login to get token
+  const loginRes = await request(app)
+    .post("/api/v1/auth/login")
+    .send({ email, password });
+
+  const token = loginRes.body.data?.accessToken || loginRes.body.accessToken;
+
+  return {
+    id,
+    email,
+    password,
+    token,
+    memberProfileId,
+    trainerProfileId,
+  };
+};
+
 module.exports = {
   createTestUser,
   loginUser,
   getAuthToken,
   createAuthenticatedUser,
+  createTestUserInDB,
 };
