@@ -79,12 +79,9 @@ const checkinPaths = {
   // ============================================================
   '/checkin/{uniqueId}': {
     post: {
-      summary: 'Standard check-in by unique member ID',
+      summary: 'Standard check-in by unique member ID (Admin/Reception only)',
       description: `
         Records a member's check-in using their unique gym ID (GYM-XXXX-X).
-        - **Member**: Can check in with their own ID.
-        - **Reception/Admin**: Can check in any member.
-
         Requires an active subscription.
       `,
       tags: ['Check-in'],
