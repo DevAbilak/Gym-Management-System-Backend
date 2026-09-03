@@ -4,6 +4,7 @@ const notificationService = require('./notification.service');
 const memberService = require('./member.service');
 const { invalidateTrainerScheduleCache } = require('./trainer.service');
 const { redisClient } = require('../config/redis');
+const logger = require('../config/logger');
 
 const CANCEL_WINDOW_HOURS = 2;
 const CACHE_TTL = 300; // 5 minutes
@@ -96,7 +97,7 @@ const bookClass = async (memberProfileId, classId) => {
         });
       }
     } catch (notifError) {
-      req.log.error('Failed to send notification:', notifError.message);
+      logger.error('Failed to send notification:', notifError.message);
     }
 
     await invalidateBookingCache(bookingId, memberProfileId);
@@ -228,7 +229,7 @@ const cancelBooking = async (bookingId) => {
         });
       }
     } catch (notifError) {
-      req.log.error(
+      logger.error(
         'Failed to send cancellation notification:',
         notifError.message,
       );
@@ -361,7 +362,7 @@ const rescheduleBooking = async (bookingId, newClassId) => {
         });
       }
     } catch (notifError) {
-      req.log.error(
+      logger.error(
         'Failed to send reschedule notification:',
         notifError.message,
       );
