@@ -1,5 +1,6 @@
 const trainerService = require('../services/trainer.service');
 const classService = require('../services/class.service');
+const memberService = require('../services/member.service');
 const { sendError, sendSuccess, ErrorCodes } = require('../utils/response');
 const { isMemberAssignedToTrainer } = require('../utils/permissionCheck');
 
@@ -314,6 +315,25 @@ const getWorkoutTemplates = async (req, res, next) => {
   try {
     const trainerId = req.params.trainerId;
 
+    const trainer = await trainerService.getTrainerById(trainerId);
+    if (!trainer) {
+      return sendError(
+        res,
+        'Trainer profile not found for this user',
+        ErrorCodes.NOT_FOUND,
+        404,
+      );
+    }
+
+    if (req.user.role === 'trainer' && req.user.id !== trainer.user_id) {
+      return sendError(
+        res,
+        'You can only see your exercise templates',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
+
     const result = await trainerService.getWorkoutTemplates(trainerId);
 
     return sendSuccess(
@@ -331,6 +351,25 @@ const getWorkoutTemplates = async (req, res, next) => {
 const getMealPlans = async (req, res, next) => {
   try {
     const trainerId = req.params.trainerId;
+
+    const trainer = await trainerService.getTrainerById(trainerId);
+    if (!trainer) {
+      return sendError(
+        res,
+        'Trainer profile not found for this user',
+        ErrorCodes.NOT_FOUND,
+        404,
+      );
+    }
+
+    if (req.user.role === 'trainer' && req.user.id !== trainer.user_id) {
+      return sendError(
+        res,
+        'You can only see your meal plans',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
 
     const result = await trainerService.getMealPlans(trainerId);
 
@@ -498,6 +537,17 @@ const recordPersonalTrainingAttendance = async (req, res, next) => {
     // Verify trainer exists
     const trainer = await trainerService.getTrainerByUserId(trainerUserId);
     if (!trainer) {
+      return sendError(
+        res,
+        'Trainer profile not found for this user',
+        ErrorCodes.NOT_FOUND,
+        404,
+      );
+    }
+
+    // Verify member exists
+    const member = await memberService.getMemberById(memberProfileId);
+    if (!member) {
       return sendError(
         res,
         'Trainer profile not found for this user',

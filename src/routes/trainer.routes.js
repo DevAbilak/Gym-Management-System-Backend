@@ -13,6 +13,7 @@ const {
   validateAssignPlan,
   validateAssignTrainerToMember,
   validateUnassignTrainer,
+  validateGetAllTrainers,
 } = require('../middleware/validators.middleware');
 
 const router = express.Router();
@@ -36,6 +37,7 @@ router.patch(
 router.get(
   '/',
   authorize('admin', 'reception'),
+  validateGetAllTrainers,
   trainerController.getAllTrainers,
 );
 

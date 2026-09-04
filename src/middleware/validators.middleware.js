@@ -381,6 +381,18 @@ const validateUpdateTrainer = [
   handleValidationErrors,
 ];
 
+const validateGetAllTrainers = [
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  handleValidationErrors,
+];
+
 // Trainer schedule
 const validateGetTrainerSchedule = [
   param('id').isUUID().withMessage('Invalid trainer ID format'),
@@ -1279,6 +1291,7 @@ module.exports = {
 
   validateGetTrainerById,
   validateUpdateTrainer,
+  validateGetAllTrainers,
   validateGetTrainerSchedule,
   validateGetTrainerRoster,
   validateClassRoster,
