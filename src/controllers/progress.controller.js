@@ -46,6 +46,21 @@ const logProgress = async (req, res, next) => {
     const memberProfileId = assignmentCheck.rows[0].member_profile_id;
     const memberUserId = assignmentCheck.rows[0].member_user_id;
 
+    const member = await memberService.getMemberById(memberProfileId);
+
+    if (!member) {
+      return sendError(res, 'Member not found.', ErrorCodes.NOT_FOUND, 404);
+    }
+
+    if (!member.is_active) {
+      return sendError(
+        res,
+        'Can not save progress for inactive members',
+        ErrorCodes.UNAUTHORIZED,
+        403,
+      );
+    }
+
     // permission check
     const isAllowed = await permissionCheck(req, memberUserId, memberProfileId);
 
@@ -69,6 +84,7 @@ const logProgress = async (req, res, next) => {
 
     return sendSuccess(res, result, 'Progress logged successfully', 201);
   } catch (error) {
+    console.log(error);
     if (error.message === 'Active assignment not found for this member.') {
       return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
     }
@@ -84,6 +100,15 @@ const getProgressHistory = async (req, res, next) => {
     const member = await memberService.getMemberById(memberProfileId);
     if (!member) {
       return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
+    }
+
+    if (!member.is_active) {
+      return sendError(
+        res,
+        'You can not view deactivated member progress',
+        ErrorCodes.UNAUTHORIZED,
+        403,
+      );
     }
 
     // permission check
@@ -128,6 +153,15 @@ const getLatestProgress = async (req, res, next) => {
     const member = await memberService.getMemberById(memberProfileId);
     if (!member) {
       return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
+    }
+
+    if (!member.is_active) {
+      return sendError(
+        res,
+        'You can not view deactivated member progress',
+        ErrorCodes.UNAUTHORIZED,
+        403,
+      );
     }
 
     const isAllowed = await permissionCheck(
