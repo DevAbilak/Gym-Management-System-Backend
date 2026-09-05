@@ -493,10 +493,34 @@ const assignPlan = async ({
   if (!member) {
     throw new Error('Member not found.');
   }
+  if (!member.is_active) {
+    throw new Error('Member is inactive.');
+  }
 
   const trainer = await getTrainerById(trainerId);
   if (!trainer) {
     throw new Error('Trainer not found.');
+  }
+  if (!trainer.is_active) {
+    throw new Error('Trainer is inactive.');
+  }
+
+  if (allowNull) {
+    const existingAssignment = await knex.raw(
+      `
+      SELECT * FROM member_assignments
+      WHERE member_profile_id = ? AND is_active = true AND workout_template_id IS NULL AND meal_plan_id IS NULL      `,
+      [memberProfileId],
+    );
+
+    if (existingAssignment.rows.length > 0) {
+      const existingTrainerId = existingAssignment.rows[0].trainer_id;
+      throw new Error(
+        existingTrainerId === trainerId
+          ? 'Member is already assigned to this trainer.'
+          : 'Member is already assigned to a trainer. To assign new trainer the previous trainer must be unassigned.',
+      );
+    }
   }
 
   if (workoutTemplateId) {
@@ -655,7 +679,8 @@ const unassignTrainer = async (memberProfileId) => {
   // check for active assignment
   const result = await knex.raw(
     `
-    SELECT * FROM member_assignments WHERE member_profile_id = ? AND is_active= true
+    SELECT * FROM member_assignments
+    WHERE member_profile_id = ? AND is_active = true AND workout_template_id IS NULL AND meal_plan_id Is NULL
   `,
     [memberProfileId],
   );
@@ -677,6 +702,16 @@ const unassignTrainer = async (memberProfileId) => {
       RETURNING *  
     `,
       [assignment.id],
+    );
+
+    // deactivate any assignments given by this trainer to a member
+    await trx.raw(
+      `
+      UPDATE member_assignments 
+      SET is_active = false, updated_at = NOW()
+      WHERE trainer_id = ?      
+    `,
+      [assignment.trainer_id],
     );
     await trx.commit();
 

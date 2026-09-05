@@ -413,6 +413,12 @@ const assignPlan = async (req, res, next) => {
     ) {
       return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
     }
+    if (
+      error.message === 'Trainer is inactive.' ||
+      error.message === 'Member is inactive.'
+    ) {
+      return sendError(res, error.message, ErrorCodes.FORBIDDEN, 403);
+    }
     if (error.message.includes('permission')) {
       return sendError(res, error.message, ErrorCodes.FORBIDDEN, 403);
     }
@@ -456,6 +462,15 @@ const assignTrainerToMember = async (req, res, next) => {
       error.message === 'Trainer not found.'
     ) {
       return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
+    }
+    if (
+      error.message === 'Trainer is inactive.' ||
+      error.message === 'Member is inactive.'
+    ) {
+      return sendError(res, error.message, ErrorCodes.FORBIDDEN, 403);
+    }
+    if (error.message.includes('Member is already assigned')) {
+      return sendError(res, error.message, ErrorCodes.CONFLICT, 409);
     }
     next(error);
   }
