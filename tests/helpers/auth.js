@@ -171,10 +171,22 @@ const createTestUserInDB = async (role, overrides = {}) => {
   };
 };
 
+const deactivateUser = async (email) => {
+  await knex.raw(
+    `
+    UPDATE users 
+    SET is_active = false
+    WHERE email = ?
+  `,
+    [email],
+  );
+};
+
 module.exports = {
   createTestUser,
   loginUser,
   getAuthToken,
   createAuthenticatedUser,
   createTestUserInDB,
+  deactivateUser,
 };
