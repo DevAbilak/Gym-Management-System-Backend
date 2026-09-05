@@ -84,9 +84,48 @@ const createWorkoutTemplate = async (payload) => {
   return template.id;
 };
 
+const assignPlan = async (payload) => {
+  const { memberProfileId, trainerId, workoutTemplateId, mealPlanId, notes } =
+    payload;
+
+  const assignment = await knex.raw(
+    `
+    INSERT INTO member_assignments (
+      member_profile_id, trainer_id, workout_template_id, meal_plan_id,
+      assigned_at, is_active, notes
+    )
+    VALUES (?, ?, ?, ?, NOW(), true, ?)
+    RETURNING *
+  `,
+    [
+      memberProfileId,
+      trainerId,
+      workoutTemplateId || null,
+      mealPlanId || null,
+      notes || null,
+    ],
+  );
+
+  return assignment.rows[0].id;
+};
+
+const getActiveAssignment = async (memberProfileId, trainerId) => {
+  const assignment = await knex.raw(
+    `
+    SELECT * FROM member_assignments
+    WHERE member_profile_id = ? AND is_active = true AND trainer_id = ?
+  `,
+    [memberProfileId, trainerId],
+  );
+
+  return assignment.rows;
+};
+
 module.exports = {
   assignMemberToTrainer,
   createTrainerRating,
   createMealPlan,
   createWorkoutTemplate,
+  assignPlan,
+  getActiveAssignment,
 };

@@ -96,6 +96,7 @@ const createTestUserInDB = async (role, overrides = {}) => {
   const first_name =
     overrides.first_name || role.charAt(0).toUpperCase() + role.slice(1);
   const last_name = overrides.last_name || "User";
+  const is_active = overrides.is_active ?? true;
 
   // Insert into users table
   await knex.raw(
@@ -111,7 +112,7 @@ const createTestUserInDB = async (role, overrides = {}) => {
       last_name,
       overrides.phone || "+251900000000",
       role,
-      true,
+      is_active,
     ],
   );
 

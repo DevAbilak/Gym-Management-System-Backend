@@ -6,6 +6,8 @@ const {
   createTrainerRating,
   createMealPlan,
   createWorkoutTemplate,
+  assignPlan,
+  getActiveAssignment,
 } = require("../helpers/trainer");
 const knex = require("../../src/db/db");
 
@@ -740,6 +742,63 @@ describe("Trainers API", () => {
       expect(res.status).toBe(403);
     });
 
+    it("should deny assigning a member to a trainer twice", async () => {
+      const res = await request(app)
+        .post(`/api/v1/trainers/${trainerId}/assign-trainer`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          member_profile_id: member2ProfileId,
+          notes: "New client intake",
+        });
+
+      expect(res.status).toBe(409);
+    });
+
+    it("should deny assigning already assigned member to another trainer (only one trainer is allowed)", async () => {
+      const res = await request(app)
+        .post(`/api/v1/trainers/${trainer2Id}/assign-trainer`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          member_profile_id: member2ProfileId,
+          notes: "New client intake",
+        });
+
+      expect(res.status).toBe(409);
+    });
+
+    it("should deny assigning a trainer to inactive member and vise versa", async () => {
+      const member = await createTestUserInDB("member", {
+        email: "memberinactive@test.com",
+        is_active: false,
+      });
+      const inactiveMemberProfileId = member.memberProfileId;
+
+      const trainer = await createTestUserInDB("trainer", {
+        email: "trainerinactive@test.com",
+        first_name: "Trainer",
+        last_name: "Inactive",
+        is_active: false,
+      });
+      const inactiveTrainerId = trainer.trainerProfileId;
+
+      const res1 = await request(app)
+        .post(`/api/v1/trainers/${trainerId}/assign-trainer`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          member_profile_id: inactiveMemberProfileId,
+        });
+
+      const res2 = await request(app)
+        .post(`/api/v1/trainers/${inactiveTrainerId}/assign-trainer`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          member_profile_id: memberProfileId,
+        });
+
+      expect(res1.status).toBe(403);
+      expect(res2.status).toBe(403);
+    });
+
     it("should return 404 for non-existent trainer", async () => {
       const res = await request(app)
         .post(
@@ -775,14 +834,42 @@ describe("Trainers API", () => {
   });
 
   describe("DELETE /api/v1/trainers/assignments/member/:memberProfileId", () => {
-    it("should allow admin to unassign a trainer from a member", async () => {
+    beforeAll(async () => {
+      const mealPlanId = await createMealPlan({
+        trainer_id: trainerId,
+        name: "test meal plan",
+      });
+      const workoutTemplateId = await createMealPlan({
+        trainer_id: trainerId,
+        name: "test meal plan",
+      });
+
+      // assigning plans
+      await assignPlan({
+        trainerId,
+        memberProfileId: member2ProfileId,
+        mealPlanId,
+      });
+
+      await assignPlan({
+        trainerId,
+        memberProfileId: member2ProfileId,
+        workoutTemplateId,
+      });
+    });
+
+    it("should allow admin to unassign a trainer from a member and deactivate any assignments from that trainer to that user", async () => {
       const res = await request(app)
         .delete(`/api/v1/trainers/assignments/member/${member2ProfileId}`)
         .set("Authorization", `Bearer ${adminToken}`);
 
+      // check if there is active assignments
+      const res2 = await getActiveAssignment(trainerId, member2ProfileId);
+
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.is_active).toBe(false);
+      expect(res2.length).toBe(0);
     });
 
     it("should allow reception to unassign a trainer", async () => {
