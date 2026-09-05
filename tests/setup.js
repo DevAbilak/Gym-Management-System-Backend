@@ -17,6 +17,7 @@ if (process.env.NODE_ENV !== "test") {
 
 const knex = require("../src/db/db");
 const mongoose = require("mongoose");
+const { MongoMemoryServer } = require("mongodb-memory-server");
 const { redisClient } = require("../src/config/redis");
 const { truncatePostgres, clearMongo, clearRedis } = require("./helpers/db");
 
@@ -26,6 +27,7 @@ const { truncatePostgres, clearMongo, clearRedis } = require("./helpers/db");
 jest.setTimeout(30000);
 
 let redisConnected = false;
+let mongoServer;
 
 beforeAll(async () => {
   // Connect to databases
@@ -38,12 +40,10 @@ beforeAll(async () => {
   }
 
   try {
-    if (mongoose.connection.readyState !== 1) {
-      await mongoose.connect(
-        process.env.MONGODB_URI || "mongodb://localhost:27017/gym_test",
-      );
-      console.log("MongoDB connected (test)");
-    }
+    mongoServer = await MongoMemoryServer.create();
+    const uri = mongoServer.getUri();
+    await mongoose.connect(uri);
+    console.log("MongoDB memory server started");
   } catch (err) {
     console.warn("MongoDB connection failed, continuing without MongoDB");
   }

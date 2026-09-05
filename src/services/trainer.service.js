@@ -276,8 +276,6 @@ const getTrainerRoster = async (trainerId) => {
   const cacheKey = `trainer:roster:${trainerId}`;
   const cached = await redisClient.get(cacheKey);
   if (cached) {
-    console.log(true);
-
     return JSON.parse(cached);
   }
 
