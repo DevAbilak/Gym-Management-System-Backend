@@ -27,8 +27,17 @@ const saveHealthProfile = async (req, res, next) => {
       return sendError(res, 'Member not found', ErrorCodes.NOT_FOUND, 404);
     }
 
+    if (!member.is_active) {
+      return sendError(
+        res,
+        'You can\'t save health metrics for deactivated member',
+        ErrorCodes.UNAUTHORIZED,
+        403,
+      );
+    }
+
     // permission check
-    const isOwn = req.user.role === 'member' && req.user.id === member.id;
+    const isOwn = req.user.role === 'member' && req.user.id === member.user_id;
     const isAdminReception =
       req.user.role === 'admin' || req.user.role === 'reception';
     const isAssignedTrainer =

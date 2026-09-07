@@ -12,6 +12,11 @@ const healthMetricSchema = new mongoose.Schema(
       required: [true, 'Height in cm is required'],
       min: 0,
     },
+    weight_kg: {
+      type: Number,
+      required: [true, 'Weight in kg is required'],
+      min: 0,
+    },
     bmi: {
       type: Number,
       min: 0,
