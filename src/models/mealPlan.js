@@ -65,6 +65,10 @@ const mealPlanSchema = new mongoose.Schema(
       enum: ['weight_loss', 'muscle_building', 'maintenance'],
       default: 'maintenance',
     },
+    is_public: {
+      type: Boolean,
+      default: false,
+    },
     calories_target: {
       type: Number,
       default: null,

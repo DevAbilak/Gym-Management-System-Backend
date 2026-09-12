@@ -321,6 +321,7 @@ const createMealPlan = async (payload) => {
     carbs_g,
     fat_g,
     items,
+    is_public,
   } = payload;
 
   // verify trainer exists in PostgreSQL
@@ -337,6 +338,7 @@ const createMealPlan = async (payload) => {
     name,
     description: description || null,
     goal_type: goal_type || 'maintenance',
+    is_public: is_public || false,
     calories_target: calories_target || null,
     protein_g: protein_g || null,
     carbs_g: carbs_g || null,

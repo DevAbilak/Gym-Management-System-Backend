@@ -391,6 +391,7 @@ const templatePaths = {
               name: 'Weight Loss - 1800 Cal',
               description: 'Balanced meal plan for fat loss',
               goal_type: 'weight_loss',
+              is_public: false,
               calories_target: 1800,
               protein_g: 150,
               carbs_g: 180,
