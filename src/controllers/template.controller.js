@@ -1,4 +1,4 @@
-const templateService = require('../services/templete.service');
+const templateService = require('../services/template.service');
 const trainerService = require('../services/trainer.service');
 const { sendError, sendSuccess, ErrorCodes } = require('../utils/response');
 
@@ -9,20 +9,34 @@ const { sendError, sendSuccess, ErrorCodes } = require('../utils/response');
 const createWorkoutTemplate = async (req, res, next) => {
   try {
     const payload = req.body;
+    const trainer = await trainerService.getTrainerById(payload.trainer_id);
+
+    if (!trainer) {
+      return sendError(
+        res,
+        'Trainer does not found',
+        ErrorCodes.NOT_FOUND,
+        404,
+      );
+    }
 
     // Permission check
-    // If user is a trainer, they can only create templates for themselves
-    // Admin can create for any trainer (already allowed)
-    if (req.user.role === 'trainer' && req.user.id !== payload.trainer_id) {
-      const trainer = await trainerService.getTrainerByUserId(req.user.id);
-      if (trainer && trainer.id !== payload.trainer_id) {
-        return sendError(
-          res,
-          'Trainers can only create templates for themselves.',
-          ErrorCodes.FORBIDDEN,
-          403,
-        );
-      }
+    if (req.user.role === 'trainer' && req.user.id !== trainer.user_id) {
+      return sendError(
+        res,
+        'Trainers can only create templates for themselves.',
+        ErrorCodes.FORBIDDEN,
+        403,
+      );
+    }
+
+    if (!trainer.is_active) {
+      return sendError(
+        res,
+        'You can\'t create workout template for deactivated user',
+        ErrorCodes.UNAUTHORIZED,
+        403,
+      );
     }
 
     const template = await templateService.createWorkoutTemplate(payload);
@@ -38,9 +52,6 @@ const createWorkoutTemplate = async (req, res, next) => {
       201,
     );
   } catch (error) {
-    if (error.message.includes('does not exist')) {
-      return sendError(res, error.message, ErrorCodes.NOT_FOUND, 404);
-    }
     next(error);
   }
 };
@@ -100,69 +111,18 @@ const getWorkoutTemplateById = async (req, res, next) => {
 
 const getWorkoutTemplates = async (req, res, next) => {
   try {
-    const {
-      trainer_id,
-      goal_type,
-      difficulty,
-      include_public,
-      page = 1,
-      limit = 20,
-    } = req.query;
-
-    // Permission logic
-    // If no trainer_id provided, return all templates (Admin/Reception only)
-    if (!trainer_id) {
-      if (req.user.role !== 'admin' && req.user.role !== 'reception') {
-        return sendError(
-          res,
-          'Access denied. Only Admin/Reception can view all templates without a trainer filter.',
-          ErrorCodes.FORBIDDEN,
-          403,
-        );
-      }
-
-      // Admin/Reception can see all templates
-      const result = await templateService.getAllWorkoutTemplates(
-        parseInt(page),
-        parseInt(limit),
-      );
-      return sendSuccess(
-        res,
-        result,
-        'Workout templates retrieved successfully',
-        200,
-      );
-    }
-
-    // if trainer_id is provided
-    if (req.user.role === 'trainer') {
-      const trainer = await trainerService.getTrainerByUserId(req.user.id);
-      if (trainer && trainer.id !== trainer_id) {
-        return sendError(
-          res,
-          'Trainers can only view their own templates.',
-          ErrorCodes.FORBIDDEN,
-          403,
-        );
-      }
-    }
-
-    // member can view public templates only
-    const includePublic =
-      req.user.role === 'member' ? true : include_public !== 'false';
-
-    const templates = await templateService.getWorkoutTemplateByTrainer(
-      trainer_id,
-      { goal_type, difficulty, include_public: includePublic },
+    const result = await templateService.getAllWorkoutTemplates(
+      req.query,
+      req.user,
     );
-
     return sendSuccess(
       res,
-      templates,
+      result,
       'Workout templates retrieved successfully',
       200,
     );
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };
@@ -274,17 +234,36 @@ const createMealPlan = async (req, res, next) => {
   try {
     const payload = req.body;
 
+    const trainer = await trainerService.getTrainerById(payload.trainer_id);
+
+    if (!trainer) {
+      return sendError(
+        res,
+        'Trainer does not found',
+        ErrorCodes.NOT_FOUND,
+        404,
+      );
+    }
+
     // Permission check
     if (req.user.role === 'trainer') {
-      const trainer = await trainerService.getTrainerByUserId(req.user.id);
-      if (trainer && trainer.id !== payload.trainer_id) {
+      if (trainer.user_id !== req.user.id) {
         return sendError(
           res,
-          'Trainers can only create meal plans for themselves.',
+          'You can only create meal plan for Yourself.',
           ErrorCodes.FORBIDDEN,
           403,
         );
       }
+    }
+
+    if (!trainer.is_active) {
+      return sendError(
+        res,
+        'You can\'t create workout template for deactivated user',
+        ErrorCodes.UNAUTHORIZED,
+        403,
+      );
     }
 
     const plan = await templateService.createMealPlan(payload);
@@ -335,42 +314,10 @@ const getMealPlanById = async (req, res, next) => {
 
 const getMealPlans = async (req, res, next) => {
   try {
-    const { trainer_id, goal_type, page = 1, limit = 20 } = req.query;
-
-    // If no trainer_id, return all (Admin/Reception only)
-    if (!trainer_id) {
-      if (req.user.role !== 'admin' && req.user.role !== 'reception') {
-        return sendError(
-          res,
-          'Access denied. Only Admin/Reception can view all meal plans without a trainer filter.',
-          ErrorCodes.FORBIDDEN,
-          403,
-        );
-      }
-      const result = await templateService.getAllMealPlans(
-        parseInt(page),
-        parseInt(limit),
-      );
-      return sendSuccess(res, result, 'Meal plans retrieved successfully', 200);
-    }
-
-    // Permission check for specific trainer
-    if (req.user.role === 'trainer') {
-      const trainer = await trainerService.getTrainerByUserId(req.user.id);
-      if (trainer && trainer.id !== trainer_id) {
-        return sendError(
-          res,
-          'Trainers can only view their own meal plans.',
-          ErrorCodes.FORBIDDEN,
-          403,
-        );
-      }
-    }
-
-    // Members, Admin/Reception can view any trainer's meal plans
-    const plans = await templateService.getMealPlansByTrainer(trainer_id, {
-      goal_type,
-    });
+    const plans = await templateService.getAllMealPlans(
+      parseInt(page),
+      parseInt(limit),
+    );
 
     return sendSuccess(res, plans, 'Meal plans retrieved successfully', 200);
   } catch (error) {

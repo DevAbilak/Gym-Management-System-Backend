@@ -1,6 +1,7 @@
 const { MealPlan, WorkoutTemplate } = require('../models/index');
 const knex = require('../db/db');
 const { redisClient } = require('../config/redis');
+const trainerService = require('./trainer.service');
 
 const CACHE_TTL = 300; // 5 minutes
 
@@ -87,6 +88,45 @@ const invalidateAllRosterCaches = async () => {
   }
 };
 
+//  Build the filter object based on user role and query parameters.
+const buildWorkoutFilter = async (user, query = {}) => {
+  const filter = {};
+  const { role, id: userId } = user;
+  const { goal_type, difficulty, include_public } = query;
+
+  // Always apply goal_type and difficulty if provided
+  if (goal_type) filter.goal_type = goal_type;
+  if (difficulty) filter.difficulty = difficulty;
+
+  switch (role) {
+    case 'admin':
+    case 'reception':
+      // No additional restriction — full visibility.
+      break;
+
+    case 'trainer': {
+      const trainer = await trainerService.getTrainerByUserId(userId);
+      const includePublic = include_public === 'true';
+      const conditions = [{ trainer_id: trainer.id }];
+      if (includePublic) conditions.push({ is_public: true });
+      filter.$or = conditions;
+      break;
+    }
+
+    case 'member':
+      // Members see only public templates.
+      filter.is_public = true;
+      break;
+
+    default:
+      // Unknown/unhandled role — fail closed instead of leaking data.
+      filter._id = null; // matches nothing
+      break;
+  }
+
+  return filter;
+};
+
 // ============================================================
 // WORKOUT TEMPLATES
 // ============================================================
@@ -101,17 +141,6 @@ const createWorkoutTemplate = async (payload) => {
     is_public,
     exercises,
   } = payload;
-
-  // verify trainer exists in postgreSQL
-  const trainerCheck = await knex.raw(
-    `
-    SELECT id FROM trainers WHERE id = ?
-  `,
-    [trainer_id],
-  );
-  if (trainerCheck.rows.length === 0) {
-    throw new Error(`Trainer with ID ${trainer_id} does not exist`);
-  }
 
   // create a mongoDB document
   const template = new WorkoutTemplate({
@@ -185,33 +214,32 @@ const getWorkoutTemplateByTrainer = async (trainerId, filters = {}) => {
   return templates;
 };
 
-const getAllWorkoutTemplates = async (page = 1, limit = 20) => {
-  const cacheKey = cacheKeys.workoutAll(page, limit);
+const getAllWorkoutTemplates = async (query, user) => {
+  const page = Math.max(parseInt(query.page, 10) || 1, 1);
+  const limit = Math.max(parseInt(query.limit, 10) || 20, 1);
 
-  const cached = await redisClient.get(cacheKey);
-  if (cached) {
-    return JSON.parse(cached);
-  }
+  const filter = await buildWorkoutFilter(user, query);
 
   const skip = (page - 1) * limit;
+
   const [data, total] = await Promise.all([
-    WorkoutTemplate.find().sort({ created_at: -1 }).limit(limit).skip(skip),
-    WorkoutTemplate.countDocuments(),
+    WorkoutTemplate.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    WorkoutTemplate.countDocuments(filter),
   ]);
 
   const result = {
     data,
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page,
+      limit,
       total,
       totalPages: Math.ceil(total / limit),
     },
   };
-
-  if (result) {
-    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', CACHE_TTL);
-  }
 
   return result;
 };

@@ -462,7 +462,7 @@ const getClassRoster = async (trainerId, classId) => {
 
 // GET TRAINER WORKOUT TEMPLATES
 const getWorkoutTemplates = async (trainerId) => {
-  const templateService = require('./templete.service');
+  const templateService = require('./template.service');
   return await templateService.getWorkoutTemplateByTrainer(trainerId, {
     include_public: true,
   });
@@ -470,7 +470,7 @@ const getWorkoutTemplates = async (trainerId) => {
 
 // GET TRAINER MEAL PLANS
 const getMealPlans = async (trainerId) => {
-  const mealPlanService = require('./templete.service');
+  const mealPlanService = require('./template.service');
   return await mealPlanService.getMealPlansByTrainer(trainerId);
 };
 

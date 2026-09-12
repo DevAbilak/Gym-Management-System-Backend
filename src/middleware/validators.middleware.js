@@ -713,8 +713,8 @@ const validateGetWorkoutTemplateById = [
   param('id')
     .notEmpty()
     .withMessage('workout template id is required')
-    .isUUID()
-    .withMessage('workout template id must be a valid uuid'),
+    .isMongoId()
+    .withMessage('Invalid workout template id format'),
 ];
 
 // Get workout templates validator

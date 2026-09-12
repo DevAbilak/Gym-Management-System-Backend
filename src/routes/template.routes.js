@@ -43,12 +43,14 @@ router.get(
 
 router.patch(
   '/workout/:id',
+  authorize('admin', 'reception', 'trainer'),
   validateUpdateWorkoutTemplate,
   templateController.updateWorkoutTemplate,
 );
 
 router.delete(
   '/workout/:id',
+  authorize('admin', 'reception', 'trainer'),
   validateDeleteWorkoutTemplate,
   templateController.deleteWorkoutTemplate,
 );
@@ -57,7 +59,12 @@ router.delete(
 // MEAL PLANS
 // ============================================================
 
-router.post('/meal', validateCreateMealPlan, templateController.createMealPlan);
+router.post(
+  '/meal',
+  authorize('admin', 'trainer'),
+  validateCreateMealPlan,
+  templateController.createMealPlan,
+);
 
 router.get('/meal', validateGetMealPlans, templateController.getMealPlans);
 
