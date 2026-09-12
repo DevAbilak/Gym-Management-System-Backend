@@ -338,6 +338,12 @@ const templatePaths = {
           description: 'Filter by goal type',
         },
         {
+          name: 'include_public',
+          in: 'query',
+          schema: { type: 'boolean', default: true },
+          description: 'Include public templates',
+        },
+        {
           name: 'page',
           in: 'query',
           schema: { type: 'integer', default: 1 },

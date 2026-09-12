@@ -122,7 +122,6 @@ const getWorkoutTemplates = async (req, res, next) => {
       200,
     );
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };
@@ -292,15 +291,23 @@ const getMealPlanById = async (req, res, next) => {
     }
 
     // Permission check
-    // Members can always view meal plans (they are assigned by trainers)
-    // Admin/Reception can view anything
-    // Trainers can view their own
     if (req.user.role === 'trainer') {
       const trainer = await trainerService.getTrainerByUserId(req.user.id);
-      if (trainer && trainer.id !== plan.trainer_id) {
+      if (trainer && trainer.id !== plan.trainer_id && !plan.is_public) {
         return sendError(
           res,
-          'Trainers can only view their own meal plans.',
+          'you can only view their own meal plans.',
+          ErrorCodes.FORBIDDEN,
+          403,
+        );
+      }
+    }
+
+    if (req.user.role === 'member') {
+      if (!plan.is_public) {
+        return sendError(
+          res,
+          'you can only view public meal plans.',
           ErrorCodes.FORBIDDEN,
           403,
         );
@@ -314,10 +321,7 @@ const getMealPlanById = async (req, res, next) => {
 
 const getMealPlans = async (req, res, next) => {
   try {
-    const plans = await templateService.getAllMealPlans(
-      parseInt(page),
-      parseInt(limit),
-    );
+    const plans = await templateService.getAllMealPlans(req.query, req.user);
 
     return sendSuccess(res, plans, 'Meal plans retrieved successfully', 200);
   } catch (error) {

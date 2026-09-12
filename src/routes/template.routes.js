@@ -76,12 +76,14 @@ router.get(
 
 router.patch(
   '/meal/:id',
+  authorize('admin', 'reception', 'trainer'),
   validateUpdateMealPlan,
   templateController.updateMealPlan,
 );
 
 router.delete(
   '/meal/:id',
+  authorize('admin', 'reception', 'trainer'),
   validateDeleteMealPlan,
   templateController.deleteMealPlan,
 );

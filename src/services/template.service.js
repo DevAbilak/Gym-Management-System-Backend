@@ -1,5 +1,4 @@
 const { MealPlan, WorkoutTemplate } = require('../models/index');
-const knex = require('../db/db');
 const { redisClient } = require('../config/redis');
 const trainerService = require('./trainer.service');
 
@@ -117,10 +116,36 @@ const buildWorkoutFilter = async (user, query = {}) => {
       // Members see only public templates.
       filter.is_public = true;
       break;
+  }
 
-    default:
-      // Unknown/unhandled role — fail closed instead of leaking data.
-      filter._id = null; // matches nothing
+  return filter;
+};
+
+const buildMealFilter = async (user, query = {}) => {
+  const filter = {};
+  const { role, id: userId } = user;
+  const { goal_type, include_public } = query;
+
+  if (goal_type) filter.goal_type = goal_type;
+
+  switch (role) {
+    case 'admin':
+    case 'reception':
+      // No additional restriction — full visibility.
+      break;
+
+    case 'trainer': {
+      const trainer = await trainerService.getTrainerByUserId(userId);
+      const includePublic = include_public === 'true';
+      const conditions = [{ trainer_id: trainer.id }];
+      if (includePublic) conditions.push({ is_public: true });
+      filter.$or = conditions;
+      break;
+    }
+
+    case 'member':
+      // Members see only public templates.
+      filter.is_public = true;
       break;
   }
 
@@ -218,7 +243,7 @@ const getAllWorkoutTemplates = async (query, user) => {
   const page = Math.max(parseInt(query.page, 10) || 1, 1);
   const limit = Math.max(parseInt(query.limit, 10) || 20, 1);
 
-  const filter = await buildWorkoutFilter(user, query);
+  const filter = await buildMealFilter(user, query);
 
   const skip = (page - 1) * limit;
 
@@ -324,14 +349,6 @@ const createMealPlan = async (payload) => {
     is_public,
   } = payload;
 
-  // verify trainer exists in PostgreSQL
-  const trainerCheck = await knex.raw('SELECT id FROM trainers WHERE id = ?', [
-    trainer_id,
-  ]);
-  if (trainerCheck.rows.length === 0) {
-    throw new Error(`Trainer with ID ${trainer_id} does not exist`);
-  }
-
   // create mongoDB document
   const plan = new MealPlan({
     trainer_id,
@@ -392,33 +409,32 @@ const getMealPlansByTrainer = async (trainerId, filters = {}) => {
   return plans;
 };
 
-const getAllMealPlans = async (page = 1, limit = 20) => {
-  const cacheKey = cacheKeys.mealAll(page, limit);
+const getAllMealPlans = async (query, user) => {
+  const page = Math.max(parseInt(query.page, 10) || 1, 1);
+  const limit = Math.max(parseInt(query.limit, 10) || 20, 1);
 
-  const cached = await redisClient.get(cacheKey);
-  if (cached) {
-    return JSON.parse(cached);
-  }
+  const filter = await buildWorkoutFilter(user, query);
 
   const skip = (page - 1) * limit;
+
   const [data, total] = await Promise.all([
-    MealPlan.find().sort({ created_at: -1 }).limit(limit).skip(skip),
-    MealPlan.countDocuments(),
+    MealPlan.find(filter)
+      .sort({ created_at: -1 })
+      .limit(limit)
+      .skip(skip)
+      .lean(),
+    MealPlan.countDocuments(filter),
   ]);
 
   const result = {
     data,
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page,
+      limit,
       total,
       totalPages: Math.ceil(total / limit),
     },
   };
-
-  if (result) {
-    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', CACHE_TTL);
-  }
 
   return result;
 };
