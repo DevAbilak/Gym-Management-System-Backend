@@ -1,4 +1,5 @@
 const knex = require("../../src/db/db");
+const crypto = require("crypto");
 
 const createTestClass = async (trainerId, overrides = {}) => {
   const startTime = new Date(Date.now() + 86400000); // tomorrow
@@ -37,7 +38,21 @@ const getBookingById = async (bookingId) => {
   return result.rows[0] || null;
 };
 
+const bookClass = async (memberProfileId, classId) => {
+  const random = crypto.randomBytes(3).toString("hex").toUpperCase();
+  const result = await knex.raw(
+    `
+    INSERT INTO class_bookings (class_id, member_profile_id, booking_reference, status) VALUES (?,?,?,'confirmed')
+    RETURNING id
+  `,
+    [classId, memberProfileId, `BK-${Date.now()}-${random}`],
+  );
+
+  return result.rows[0].id;
+};
+
 module.exports = {
   createTestClass,
   getBookingById,
+  bookClass,
 };

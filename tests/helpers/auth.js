@@ -182,6 +182,33 @@ const deactivateUser = async (email) => {
   );
 };
 
+const createUserProfile = async (payload = {}) => {
+  const id = randomUUID();
+  const password = "TestPass123!";
+  const password_hash = await bcrypt.hash(password, 12);
+  const { email, first_name, last_name, role, is_active } = payload;
+
+  const result = await knex.raw(
+    `
+    INSERT INTO users (id, email, password_hash, first_name, last_name, phone, role, is_active)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    RETURNING *
+    `,
+    [
+      id,
+      email || "test@test.com",
+      password_hash,
+      first_name || "test",
+      last_name || "user",
+      "+251900000000",
+      role || "member",
+      is_active || true,
+    ],
+  );
+
+  return result.rows[0];
+};
+
 module.exports = {
   createTestUser,
   loginUser,
@@ -189,4 +216,5 @@ module.exports = {
   createAuthenticatedUser,
   createTestUserInDB,
   deactivateUser,
+  createUserProfile,
 };
