@@ -93,18 +93,18 @@ const submitRating = async (payload) => {
   }
 
   // check active subscription
-  // const subCheck = await knex.raw(
-  //   `
-  //   SELECT 1 FROM subscriptions
-  //   WHERE member_profile_id = ? AND status = 'active'
-  //   LIMIT 1
-  // `,
-  //   [member_profile_id],
-  // );
+  const subCheck = await knex.raw(
+    `
+    SELECT 1 FROM subscriptions
+    WHERE member_profile_id = ? AND status = 'active'
+    LIMIT 1
+  `,
+    [member_profile_id],
+  );
 
-  // if (subCheck.rows.length === 0) {
-  //   throw new Error("Active subscription required to submit a rating");
-  // }
+  if (subCheck.rows.length === 0) {
+    throw new Error('Active subscription required to submit a rating');
+  }
 
   const result = await knex.raw(
     `

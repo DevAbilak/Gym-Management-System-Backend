@@ -74,7 +74,7 @@ const getTrainerAverageRating = async (req, res, next) => {
     const userRole = req.user.role;
 
     const isOwn = userRole === 'trainer' && userId === trainer.user_id;
-    const isAdminReception = userRole === 'admin' && userRole === 'reception';
+    const isAdminReception = userRole === 'admin' || userRole === 'reception';
     let isAssignedMember =
       userRole === 'member' &&
       (await isMemberAssignedToTrainer(userId, trainerId));
