@@ -24,6 +24,15 @@ const createSubscription = async (req, res, next) => {
       );
     }
 
+    if (!member.is_active) {
+      return sendError(
+        res,
+        'You can\'t create subscription for inactive member. Reactivate the member first.',
+        ErrorCodes.UNAUTHORIZED,
+        403,
+      );
+    }
+
     const subscription = await subscriptionService.createSubscription({
       member_profile_id,
       membership_tier_id,
@@ -131,7 +140,7 @@ const getActiveSubscription = async (req, res, next) => {
 
     // permission check
     const isOwn = userRole === 'member' && userId === member.user_id;
-    const isAdminReception = userRole === 'admin' && userRole === 'reception';
+    const isAdminReception = userRole === 'admin' || userRole === 'reception';
 
     if (!isOwn && !isAdminReception) {
       return sendError(
