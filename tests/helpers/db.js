@@ -1,6 +1,12 @@
 const knex = require("../../src/db/db");
 const mongoose = require("mongoose");
 const { redisClient } = require("../../src/config/redis");
+const {
+  HealthMetric,
+  Notification,
+  MealPlan,
+  WorkoutTemplate,
+} = require("../../src/models/index");
 
 // truncate all postgres tables
 const truncatePostgres = async () => {
@@ -23,26 +29,46 @@ const truncatePostgres = async () => {
 };
 
 // delete all mongoDB collections
+// const clearMongo = async () => {
+//   // Only clear if MongoDB is connected
+//   if (mongoose.connection.readyState !== 1) {
+//     console.log("MongoDB not connected, skipping clear");
+//     return;
+//   }
+//   const collections = [
+//     "HealthMetric",
+//     "WorkoutTemplate",
+//     "MealPlan",
+//     "Notification",
+//   ];
+//   for (const collection of collections) {
+//     try {
+//       const coll = mongoose.connection.collection(collection);
+//       if (coll) {
+//         await coll.deleteMany({});
+//       }
+//     } catch (err) {
+//       console.warn(`Failed to clear collection ${collection}:`, err.message);
+//     }
+//   }
+// };
+
 const clearMongo = async () => {
-  // Only clear if MongoDB is connected
   if (mongoose.connection.readyState !== 1) {
     console.log("MongoDB not connected, skipping clear");
     return;
   }
-  const collections = [
-    "healthmetrics",
-    "workouttemplates",
-    "mealplans",
-    "notifications",
-  ];
-  for (const collection of collections) {
+
+  const models = [HealthMetric, WorkoutTemplate, MealPlan, Notification];
+
+  for (const Model of models) {
     try {
-      const coll = mongoose.connection.collection(collection);
-      if (coll) {
-        await coll.deleteMany({});
-      }
+      await Model.deleteMany({});
     } catch (err) {
-      console.warn(`Failed to clear collection ${collection}:`, err.message);
+      console.warn(
+        `Failed to clear collection ${Model.collection.name}:`,
+        err.message,
+      );
     }
   }
 };
