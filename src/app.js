@@ -28,7 +28,15 @@ const { isMongoConnected } = require('./config/mongo');
 
 const app = express();
 
-app.use(cors());
+const corsOptions = {
+  origin: ['http://localhost:3000', 'https://fit-habesha.vercel.app/'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id'],
+  exposedHeaders: ['x-access-token', 'x-refresh-status'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(compression());
 app.use(express.json());
