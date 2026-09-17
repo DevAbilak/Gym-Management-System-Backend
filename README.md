@@ -7,7 +7,7 @@ A production-ready, scalable backend for a modern gym management platform — bu
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?logo=redis&logoColor=white)
-![CI](https://github.com/DevAbilak/gym-management-backend/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/DevAbilak/Gym-Management-System-Backend/actions/workflows/ci.yml/badge.svg)
 
 ---
 
